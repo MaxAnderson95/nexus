@@ -64,6 +64,11 @@ public class LifeSupportController {
         return ResponseEntity.ok(lifeSupportService.acknowledgeAlert(alertId));
     }
     
+    @PostMapping("/environment/section/{sectionId}/self-test")
+    public ResponseEntity<SelfTestResult> runSelfTest(@PathVariable Long sectionId) {
+        return ResponseEntity.ok(lifeSupportService.runSelfTest(sectionId));
+    }
+    
     // Exception handlers
     @ExceptionHandler(LifeSupportService.SectionNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleSectionNotFound(LifeSupportService.SectionNotFoundException ex) {

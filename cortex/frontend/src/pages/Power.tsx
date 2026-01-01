@@ -7,6 +7,16 @@ function Power() {
   const [allocations, setAllocations] = useState<PowerAllocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Allocation modal state
+  const [showAllocateModal, setShowAllocateModal] = useState(false);
+  const [allocSystem, setAllocSystem] = useState('');
+  const [allocAmount, setAllocAmount] = useState(50);
+  const [allocPriority, setAllocPriority] = useState(5);
+  const [allocLoading, setAllocLoading] = useState(false);
+  
+  // Deallocation state
+  const [deallocatingSystem, setDeallocatingSystem] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -29,6 +39,41 @@ function Power() {
     }
   }
 
+  async function handleAllocate() {
+    if (!allocSystem.trim()) {
+      setError('System name is required');
+      return;
+    }
+    
+    try {
+      setAllocLoading(true);
+      setError(null);
+      await api.power.allocate(allocSystem.trim(), allocAmount, allocPriority);
+      setShowAllocateModal(false);
+      setAllocSystem('');
+      setAllocAmount(50);
+      setAllocPriority(5);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to allocate power');
+    } finally {
+      setAllocLoading(false);
+    }
+  }
+
+  async function handleDeallocate(systemName: string) {
+    try {
+      setDeallocatingSystem(systemName);
+      setError(null);
+      await api.power.deallocate(systemName);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to deallocate power');
+    } finally {
+      setDeallocatingSystem(null);
+    }
+  }
+
   const statusColors = {
     ONLINE: 'text-green-400',
     OFFLINE: 'text-red-400',
@@ -43,6 +88,16 @@ function Power() {
     FUEL_CELL: '⚡',
   };
 
+  // Predefined systems for quick allocation
+  const systemPresets = [
+    { name: 'research_lab', label: 'Research Lab' },
+    { name: 'medical_bay', label: 'Medical Bay' },
+    { name: 'communications', label: 'Communications' },
+    { name: 'sensors', label: 'Sensors' },
+    { name: 'defense_systems', label: 'Defense Systems' },
+    { name: 'cargo_handling', label: 'Cargo Handling' },
+  ];
+
   if (loading) {
     return <div className="text-gray-400 text-center py-8">Loading power data...</div>;
   }
@@ -51,7 +106,15 @@ function Power() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-white">Power Grid</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-white">Power Grid</h2>
+        <button
+          onClick={() => setShowAllocateModal(true)}
+          className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-sm"
+        >
+          + Allocate Power
+        </button>
+      </div>
 
       {error && (
         <div className="bg-red-900/50 border border-red-500 rounded-lg p-4">
@@ -155,6 +218,7 @@ function Power() {
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">System</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">Priority</th>
                 <th className="px-4 py-3 text-right text-sm font-medium text-gray-300">Allocated (kW)</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-gray-300">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700">
@@ -172,8 +236,28 @@ function Power() {
                   <td className="px-4 py-3 text-right text-yellow-400 font-medium">
                     {Math.round(alloc.allocatedKw)}
                   </td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => handleDeallocate(alloc.systemName)}
+                      disabled={deallocatingSystem === alloc.systemName}
+                      className={`px-3 py-1 rounded text-xs ${
+                        deallocatingSystem === alloc.systemName
+                          ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                          : 'bg-red-600 hover:bg-red-700 text-white'
+                      }`}
+                    >
+                      {deallocatingSystem === alloc.systemName ? 'Releasing...' : 'Release'}
+                    </button>
+                  </td>
                 </tr>
               ))}
+              {allocations.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                    No power allocations
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -185,6 +269,121 @@ function Power() {
       >
         Refresh
       </button>
+
+      {/* Allocate Power Modal */}
+      {showAllocateModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Allocate Power
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  System Name
+                </label>
+                <input
+                  type="text"
+                  value={allocSystem}
+                  onChange={(e) => setAllocSystem(e.target.value)}
+                  placeholder="Enter system name..."
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white placeholder-gray-400"
+                />
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {systemPresets.map((preset) => (
+                    <button
+                      key={preset.name}
+                      onClick={() => setAllocSystem(preset.name)}
+                      className={`px-2 py-1 rounded text-xs ${
+                        allocSystem === preset.name
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Power Amount: {allocAmount} kW
+                </label>
+                <input
+                  type="range"
+                  min="10"
+                  max="500"
+                  step="10"
+                  value={allocAmount}
+                  onChange={(e) => setAllocAmount(parseInt(e.target.value))}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>10 kW</span>
+                  <span>250 kW</span>
+                  <span>500 kW</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Priority: P{allocPriority}
+                </label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setAllocPriority(p)}
+                      className={`flex-1 py-1 rounded text-xs ${
+                        allocPriority === p
+                          ? p <= 2 ? 'bg-red-600 text-white' :
+                            p <= 4 ? 'bg-yellow-600 text-white' : 'bg-blue-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Lower = higher priority (1-2: Critical, 3-4: High, 5+: Normal)
+                </p>
+              </div>
+
+              {grid && allocAmount > grid.availableKw && (
+                <div className="bg-yellow-900/50 border border-yellow-500 rounded p-2">
+                  <p className="text-yellow-300 text-xs">
+                    Warning: Requested {allocAmount} kW exceeds available {Math.round(grid.availableKw)} kW
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleAllocate}
+                disabled={allocLoading || !allocSystem.trim()}
+                className={`flex-1 py-2 rounded text-sm ${
+                  allocLoading || !allocSystem.trim()
+                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700 text-white'
+                }`}
+              >
+                {allocLoading ? 'Allocating...' : 'Allocate Power'}
+              </button>
+              <button
+                onClick={() => setShowAllocateModal(false)}
+                disabled={allocLoading}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

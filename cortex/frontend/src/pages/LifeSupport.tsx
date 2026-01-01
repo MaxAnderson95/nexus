@@ -1,12 +1,22 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/client';
-import type { EnvironmentStatus, Alert } from '../types';
+import type { EnvironmentStatus, Alert, SelfTestResult } from '../types';
 
 function LifeSupport() {
   const [environment, setEnvironment] = useState<EnvironmentStatus[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Self-test state
+  const [testingSection, setTestingSection] = useState<number | null>(null);
+  const [testResult, setTestResult] = useState<SelfTestResult | null>(null);
+  
+  // Adjustment modal state
+  const [adjustingSection, setAdjustingSection] = useState<EnvironmentStatus | null>(null);
+  const [adjustTemp, setAdjustTemp] = useState<number>(22);
+  const [adjustO2, setAdjustO2] = useState<number>(21);
+  const [adjustLoading, setAdjustLoading] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -38,6 +48,45 @@ function LifeSupport() {
     }
   }
 
+  async function handleSelfTest(sectionId: number) {
+    try {
+      setTestingSection(sectionId);
+      setTestResult(null);
+      setError(null);
+      const result = await api.lifeSupport.runSelfTest(sectionId);
+      setTestResult(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Self-test failed');
+    } finally {
+      setTestingSection(null);
+    }
+  }
+
+  function openAdjustModal(section: EnvironmentStatus) {
+    setAdjustingSection(section);
+    setAdjustTemp(section.targetTemperature);
+    setAdjustO2(section.targetO2);
+  }
+
+  async function handleAdjust() {
+    if (!adjustingSection) return;
+    
+    try {
+      setAdjustLoading(true);
+      setError(null);
+      await api.lifeSupport.adjustSection(adjustingSection.sectionId, {
+        targetTemperature: adjustTemp,
+        targetO2: adjustO2,
+      });
+      setAdjustingSection(null);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to adjust environment');
+    } finally {
+      setAdjustLoading(false);
+    }
+  }
+
   const statusColors = {
     NOMINAL: 'border-green-500 bg-green-900/20',
     WARNING: 'border-yellow-500 bg-yellow-900/20',
@@ -62,6 +111,39 @@ function LifeSupport() {
       {error && (
         <div className="bg-red-900/50 border border-red-500 rounded-lg p-4">
           <p className="text-red-300 text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Self-Test Result */}
+      {testResult && (
+        <div className={`rounded-lg border-2 p-4 ${testResult.passed ? 'border-green-500 bg-green-900/20' : 'border-red-500 bg-red-900/20'}`}>
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="font-bold text-white">
+              Self-Test Result: {testResult.sectionName}
+            </h3>
+            <div className="flex items-center gap-2">
+              <span className={`text-xs px-2 py-1 rounded ${testResult.passed ? 'bg-green-600' : 'bg-red-600'}`}>
+                {testResult.overallStatus}
+              </span>
+              <span className="text-xs text-gray-400">{testResult.durationMs}ms</span>
+              <button
+                onClick={() => setTestResult(null)}
+                className="text-gray-400 hover:text-white"
+              >
+                x
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+            {testResult.subsystems.map((sub, idx) => (
+              <div key={idx} className={`p-2 rounded text-sm ${sub.passed ? 'bg-green-900/50' : 'bg-red-900/50'}`}>
+                <div className="font-medium">{sub.name}</div>
+                <div className={`text-xs ${sub.passed ? 'text-green-400' : 'text-red-400'}`}>
+                  {sub.message}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -135,6 +217,29 @@ function LifeSupport() {
                   <span className="text-white">{section.currentOccupancy}/{section.maxOccupancy}</span>
                 </div>
               </div>
+              
+              {/* Action Buttons */}
+              <div className="mt-3 pt-3 border-t border-gray-600 flex gap-2">
+                <button
+                  onClick={() => handleSelfTest(section.sectionId)}
+                  disabled={testingSection !== null}
+                  className={`flex-1 px-2 py-1 rounded text-xs ${
+                    testingSection === section.sectionId
+                      ? 'bg-yellow-600 text-white'
+                      : testingSection !== null
+                      ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                      : 'bg-cyan-600 hover:bg-cyan-700 text-white'
+                  }`}
+                >
+                  {testingSection === section.sectionId ? 'Testing...' : 'Self-Test'}
+                </button>
+                <button
+                  onClick={() => openAdjustModal(section)}
+                  className="flex-1 px-2 py-1 bg-purple-600 hover:bg-purple-700 rounded text-xs text-white"
+                >
+                  Adjust
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -146,6 +251,80 @@ function LifeSupport() {
       >
         Refresh
       </button>
+
+      {/* Adjustment Modal */}
+      {adjustingSection && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Adjust Environment: {adjustingSection.sectionName}
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Target Temperature: {adjustTemp}°C
+                </label>
+                <input
+                  type="range"
+                  min="16"
+                  max="28"
+                  step="0.5"
+                  value={adjustTemp}
+                  onChange={(e) => setAdjustTemp(parseFloat(e.target.value))}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>16°C</span>
+                  <span>22°C</span>
+                  <span>28°C</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Target O2 Level: {adjustO2}%
+                </label>
+                <input
+                  type="range"
+                  min="19"
+                  max="23"
+                  step="0.1"
+                  value={adjustO2}
+                  onChange={(e) => setAdjustO2(parseFloat(e.target.value))}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>19%</span>
+                  <span>21%</span>
+                  <span>23%</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleAdjust}
+                disabled={adjustLoading}
+                className={`flex-1 py-2 rounded text-sm ${
+                  adjustLoading
+                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    : 'bg-purple-600 hover:bg-purple-700 text-white'
+                }`}
+              >
+                {adjustLoading ? 'Applying...' : 'Apply Changes'}
+              </button>
+              <button
+                onClick={() => setAdjustingSection(null)}
+                disabled={adjustLoading}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

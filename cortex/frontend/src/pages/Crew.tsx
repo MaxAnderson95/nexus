@@ -8,6 +8,12 @@ function Crew() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<number | null>(null);
+  
+  // Relocate modal state
+  const [relocatingMember, setRelocatingMember] = useState<CrewMember | null>(null);
+  const [relocateTargetSection, setRelocateTargetSection] = useState<number | null>(null);
+  const [relocateLoading, setRelocateLoading] = useState(false);
+  const [relocateError, setRelocateError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -30,6 +36,35 @@ function Crew() {
     }
   }
 
+  async function handleRelocate() {
+    if (!relocatingMember || !relocateTargetSection) return;
+    
+    try {
+      setRelocateLoading(true);
+      setRelocateError(null);
+      await api.crew.relocate(relocatingMember.id, relocateTargetSection);
+      setRelocatingMember(null);
+      setRelocateTargetSection(null);
+      await loadData();
+    } catch (err) {
+      setRelocateError(err instanceof Error ? err.message : 'Failed to relocate crew member');
+    } finally {
+      setRelocateLoading(false);
+    }
+  }
+
+  function openRelocateModal(member: CrewMember) {
+    setRelocatingMember(member);
+    setRelocateTargetSection(null);
+    setRelocateError(null);
+  }
+
+  function closeRelocateModal() {
+    setRelocatingMember(null);
+    setRelocateTargetSection(null);
+    setRelocateError(null);
+  }
+
   const statusColors = {
     ACTIVE: 'text-green-400',
     ON_LEAVE: 'text-blue-400',
@@ -40,6 +75,13 @@ function Crew() {
   const filteredCrew = selectedSection
     ? crew.filter((c) => c.sectionId === selectedSection)
     : crew;
+
+  // Available sections for relocation (exclude current section and full sections)
+  const availableSectionsForRelocate = relocatingMember
+    ? sections.filter(
+        (s) => s.id !== relocatingMember.sectionId && s.currentOccupancy < s.maxCapacity
+      )
+    : [];
 
   if (loading) {
     return <div className="text-gray-400 text-center py-8">Loading crew data...</div>;
@@ -98,6 +140,7 @@ function Crew() {
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">Role</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">Section</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">Status</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-700">
@@ -108,6 +151,19 @@ function Crew() {
                 <td className="px-4 py-3 text-gray-400">{member.role}</td>
                 <td className="px-4 py-3 text-gray-400">{member.sectionName}</td>
                 <td className={`px-4 py-3 ${statusColors[member.status]}`}>{member.status}</td>
+                <td className="px-4 py-3">
+                  <button
+                    onClick={() => openRelocateModal(member)}
+                    disabled={member.status === 'IN_TRANSIT'}
+                    className={`px-3 py-1 rounded text-sm ${
+                      member.status === 'IN_TRANSIT'
+                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                        : 'bg-purple-600 hover:bg-purple-700 text-white'
+                    }`}
+                  >
+                    Relocate
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -151,6 +207,75 @@ function Crew() {
       >
         Refresh
       </button>
+
+      {/* Relocate Modal */}
+      {relocatingMember && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Relocate {relocatingMember.name}
+            </h3>
+            
+            <p className="text-gray-400 text-sm mb-4">
+              Current section: <span className="text-white">{relocatingMember.sectionName}</span>
+            </p>
+
+            {relocateError && (
+              <div className="bg-red-900/50 border border-red-500 rounded-lg p-3 mb-4">
+                <p className="text-red-300 text-sm">{relocateError}</p>
+              </div>
+            )}
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Select destination section:
+              </label>
+              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                {availableSectionsForRelocate.map((section) => (
+                  <button
+                    key={section.id}
+                    onClick={() => setRelocateTargetSection(section.id)}
+                    className={`p-3 rounded-lg text-sm text-left ${
+                      relocateTargetSection === section.id
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                  >
+                    <div className="font-medium">{section.name}</div>
+                    <div className="text-xs opacity-70">
+                      {section.currentOccupancy}/{section.maxCapacity} occupied
+                    </div>
+                  </button>
+                ))}
+              </div>
+              {availableSectionsForRelocate.length === 0 && (
+                <p className="text-yellow-400 text-sm">No available sections for relocation</p>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleRelocate}
+                disabled={!relocateTargetSection || relocateLoading}
+                className={`flex-1 py-2 rounded text-sm ${
+                  !relocateTargetSection || relocateLoading
+                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    : 'bg-purple-600 hover:bg-purple-700 text-white'
+                }`}
+              >
+                {relocateLoading ? 'Relocating...' : 'Confirm Relocation'}
+              </button>
+              <button
+                onClick={closeRelocateModal}
+                disabled={relocateLoading}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -18,7 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @Service
 public class LifeSupportService {
@@ -247,6 +249,129 @@ public class LifeSupportService {
         alert.setAcknowledgedBy("system");
         
         return alertRepository.save(alert);
+    }
+    
+    /**
+     * Runs a self-test diagnostic on the life support systems for a section.
+     * This includes artificial delay (2-3 seconds) to simulate actual hardware tests.
+     * The test can fail based on chaos settings.
+     */
+    public SelfTestResult runSelfTest(Long sectionId) {
+        long startTime = System.currentTimeMillis();
+        
+        if (customSpansEnabled) {
+            Span span = tracer.spanBuilder("lifesupport.runSelfTest")
+                    .setAttribute("lifesupport.section_id", sectionId)
+                    .startSpan();
+            try (Scope scope = span.makeCurrent()) {
+                span.addEvent("starting_self_test");
+                SelfTestResult result = performSelfTest(sectionId, startTime);
+                span.addEvent("self_test_completed");
+                span.setAttribute("lifesupport.test_passed", result.passed());
+                return result;
+            } finally {
+                span.end();
+            }
+        }
+        return performSelfTest(sectionId, startTime);
+    }
+    
+    private SelfTestResult performSelfTest(Long sectionId, long startTime) {
+        log.info("Running self-test for section {}", sectionId);
+        
+        EnvironmentalSettings settings = settingsRepository.findBySectionId(sectionId)
+                .orElseThrow(() -> new SectionNotFoundException("Section not found: " + sectionId));
+        
+        EnvironmentalReading reading = readingRepository
+                .findLatestBySectionId(sectionId)
+                .orElseGet(() -> createDefaultReading(settings));
+        
+        List<SelfTestResult.SubsystemTest> subsystems = new ArrayList<>();
+        Random random = new Random();
+        boolean allPassed = true;
+        
+        // Simulate testing each subsystem with delays
+        // O2 Scrubber Test (500-800ms)
+        try {
+            Thread.sleep(500 + random.nextInt(300));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        boolean o2Passed = reading.getO2Level() >= 19.0 && reading.getO2Level() <= 23.0;
+        subsystems.add(new SelfTestResult.SubsystemTest(
+            "O2 Scrubber",
+            o2Passed,
+            o2Passed ? "Operating within parameters" : "O2 levels outside safe range"
+        ));
+        if (!o2Passed) allPassed = false;
+        
+        // CO2 Recycler Test (400-600ms)
+        try {
+            Thread.sleep(400 + random.nextInt(200));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        boolean co2Passed = reading.getCo2Level() <= 0.1;
+        subsystems.add(new SelfTestResult.SubsystemTest(
+            "CO2 Recycler",
+            co2Passed,
+            co2Passed ? "CO2 levels nominal" : "CO2 levels elevated"
+        ));
+        if (!co2Passed) allPassed = false;
+        
+        // Temperature Control Test (500-700ms)
+        try {
+            Thread.sleep(500 + random.nextInt(200));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        double tempVariance = Math.abs(reading.getTemperature() - settings.getTargetTemperature());
+        boolean tempPassed = tempVariance <= 3.0;
+        subsystems.add(new SelfTestResult.SubsystemTest(
+            "Temperature Control",
+            tempPassed,
+            tempPassed ? "Temperature stable" : "Temperature variance detected: " + String.format("%.1f", tempVariance) + "C"
+        ));
+        if (!tempPassed) allPassed = false;
+        
+        // Pressure Regulator Test (400-600ms)
+        try {
+            Thread.sleep(400 + random.nextInt(200));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        double pressureVariance = Math.abs(reading.getPressure() - settings.getTargetPressure());
+        boolean pressurePassed = pressureVariance <= 2.0;
+        subsystems.add(new SelfTestResult.SubsystemTest(
+            "Pressure Regulator",
+            pressurePassed,
+            pressurePassed ? "Pressure nominal" : "Pressure variance: " + String.format("%.1f", pressureVariance) + " kPa"
+        ));
+        if (!pressurePassed) allPassed = false;
+        
+        // Humidity Controller Test (300-500ms)
+        try {
+            Thread.sleep(300 + random.nextInt(200));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        boolean humidityPassed = reading.getHumidity() >= 30 && reading.getHumidity() <= 70;
+        subsystems.add(new SelfTestResult.SubsystemTest(
+            "Humidity Controller",
+            humidityPassed,
+            humidityPassed ? "Humidity within range" : "Humidity outside optimal range"
+        ));
+        if (!humidityPassed) allPassed = false;
+        
+        long durationMs = System.currentTimeMillis() - startTime;
+        log.info("Self-test completed for section {}: {} in {}ms", 
+                sectionId, allPassed ? "PASSED" : "FAILED", durationMs);
+        
+        if (allPassed) {
+            return SelfTestResult.success(sectionId, settings.getSectionName(), subsystems, durationMs);
+        } else {
+            return SelfTestResult.failure(sectionId, settings.getSectionName(), subsystems, durationMs);
+        }
     }
     
     private EnvironmentStatus buildEnvironmentStatus(EnvironmentalSettings settings, EnvironmentalReading reading) {

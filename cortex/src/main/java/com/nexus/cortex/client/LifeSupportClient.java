@@ -140,6 +140,14 @@ public class LifeSupportClient {
                 .body(new ParameterizedTypeReference<>() {});
     }
     
+    public Map<String, Object> runSelfTest(Long sectionId) {
+        log.info("Running self-test for section: {}", sectionId);
+        return restClient.post()
+                .uri("/api/life-support/environment/section/{sectionId}/self-test", sectionId)
+                .retrieve()
+                .body(new ParameterizedTypeReference<>() {});
+    }
+    
     public record LifeSupportSummary(
         int totalSections,
         int sectionsNominal,

@@ -135,6 +135,22 @@ export interface Alert {
   createdAt: string;
 }
 
+export interface SelfTestResult {
+  sectionId: number;
+  sectionName: string;
+  passed: boolean;
+  overallStatus: 'PASSED' | 'FAILED';
+  subsystems: SubsystemTest[];
+  durationMs: number;
+  timestamp: string;
+}
+
+export interface SubsystemTest {
+  name: string;
+  passed: boolean;
+  message: string;
+}
+
 // Power
 export interface PowerGridStatus {
   totalCapacityKw: number;

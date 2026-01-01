@@ -58,4 +58,9 @@ public class LifeSupportProxyController {
     public ResponseEntity<Map<String, Object>> acknowledgeAlert(@PathVariable Long alertId) {
         return ResponseEntity.ok(lifeSupportClient.acknowledgeAlert(alertId));
     }
+    
+    @PostMapping("/environment/section/{sectionId}/self-test")
+    public ResponseEntity<Map<String, Object>> runSelfTest(@PathVariable Long sectionId) {
+        return ResponseEntity.ok(lifeSupportClient.runSelfTest(sectionId));
+    }
 }

@@ -7,6 +7,7 @@ import type {
   Section,
   EnvironmentStatus,
   Alert,
+  SelfTestResult,
   PowerGridStatus,
   PowerAllocation,
   Supply,
@@ -85,6 +86,8 @@ export const api = {
     getAlerts: () => request<Alert[]>('/life-support/alerts'),
     acknowledgeAlert: (alertId: number) =>
       request<Alert>(`/life-support/alerts/${alertId}/acknowledge`, { method: 'POST' }),
+    runSelfTest: (sectionId: number) =>
+      request<SelfTestResult>(`/life-support/environment/section/${sectionId}/self-test`, { method: 'POST' }),
   },
 
   // Power
@@ -92,10 +95,15 @@ export const api = {
     getGrid: () => request<PowerGridStatus>('/power/grid'),
     getSources: () => request<PowerGridStatus>('/power/sources'),
     getAllocations: () => request<PowerAllocation[]>('/power/allocations'),
-    allocate: (system: string, amountKw: number) =>
-      request<{ message: string }>('/power/allocate', {
+    allocate: (system: string, amountKw: number, priority?: number) =>
+      request<PowerAllocation>('/power/allocate', {
         method: 'POST',
-        body: JSON.stringify({ system, amountKw }),
+        body: JSON.stringify({ system, amountKw, priority: priority ?? 5 }),
+      }),
+    deallocate: (system: string) =>
+      request<{ message: string }>('/power/deallocate', {
+        method: 'POST',
+        body: JSON.stringify({ system }),
       }),
   },
 
