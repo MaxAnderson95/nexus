@@ -1,6 +1,18 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/client';
 import type { Supply, CargoManifest, ResupplyRequest } from '../types';
+import { Card } from '../components/ui/Card';
+import { 
+  Package, 
+  AlertTriangle, 
+  ShoppingCart, 
+  MinusCircle, 
+  PlusCircle, 
+  Filter,
+  RefreshCw,
+  Box
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 function Inventory() {
   const [supplies, setSupplies] = useState<Supply[]>([]);
@@ -27,9 +39,9 @@ function Inventory() {
     loadData();
   }, []);
 
-  async function loadData() {
+  async function loadData(init = true) {
     try {
-      setLoading(true);
+      if (init) setLoading(true);
       setError(null);
       const [suppliesData, manifestsData, requestsData] = await Promise.all([
         api.inventory.getSupplies(),
@@ -42,7 +54,7 @@ function Inventory() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load inventory data');
     } finally {
-      setLoading(false);
+      if (init) setLoading(false);
     }
   }
 
@@ -51,7 +63,7 @@ function Inventory() {
       setUnloadingManifest(manifestId);
       setError(null);
       await api.inventory.unloadManifest(manifestId);
-      await loadData();
+      await loadData(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to unload manifest');
     } finally {
@@ -67,7 +79,7 @@ function Inventory() {
       setError(null);
       await api.inventory.consume(consumingSupply.id, consumeQuantity);
       setConsumingSupply(null);
-      await loadData();
+      await loadData(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to consume supply');
     } finally {
@@ -83,7 +95,7 @@ function Inventory() {
       setError(null);
       await api.inventory.requestResupply(resupplyingSupply.id, resupplyQuantity);
       setResupplyingSupply(null);
-      await loadData();
+      await loadData(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to request resupply');
     } finally {
@@ -108,335 +120,354 @@ function Inventory() {
 
   const lowStockCount = supplies.filter((s) => s.isLowStock).length;
 
-  const categoryColors: Record<string, string> = {
-    FOOD: 'bg-green-900/50 text-green-300',
-    MEDICAL: 'bg-red-900/50 text-red-300',
-    MECHANICAL: 'bg-gray-700 text-gray-300',
-    ELECTRONIC: 'bg-blue-900/50 text-blue-300',
-    FUEL: 'bg-yellow-900/50 text-yellow-300',
-    WATER: 'bg-cyan-900/50 text-cyan-300',
-    OXYGEN: 'bg-sky-900/50 text-sky-300',
-    GENERAL: 'bg-purple-900/50 text-purple-300',
+  const getCategoryColor = (category: string) => {
+    const colors: Record<string, string> = {
+      FOOD: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+      MEDICAL: 'text-red-400 bg-red-400/10 border-red-400/20',
+      MECHANICAL: 'text-zinc-400 bg-zinc-400/10 border-zinc-400/20',
+      ELECTRONIC: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+      FUEL: 'text-orange-400 bg-orange-400/10 border-orange-400/20',
+      WATER: 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20',
+      OXYGEN: 'text-sky-400 bg-sky-400/10 border-sky-400/20',
+      GENERAL: 'text-purple-400 bg-purple-400/10 border-purple-400/20',
+    };
+    return colors[category] || colors.GENERAL;
   };
 
   if (loading) {
-    return <div className="text-gray-400 text-center py-8">Loading inventory data...</div>;
+     return (
+        <div className="flex flex-col items-center justify-center h-[60vh] text-cyan-500/50 space-y-4">
+           <Package className="w-12 h-12 animate-pulse" />
+           <div className="font-mono text-sm tracking-widest animate-pulse">CHECKING INVENTORY LEVELS...</div>
+        </div>
+     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-white">Inventory Management</h2>
-        {lowStockCount > 0 && (
-          <span className="px-3 py-1 bg-red-900 text-red-300 rounded-full text-sm">
-            {lowStockCount} items low
-          </span>
-        )}
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+         <div>
+            <h2 className="text-3xl font-light text-white uppercase tracking-wider">
+               Inventory <span className="text-cyan-400 font-bold">Logistics</span>
+            </h2>
+            <div className="flex items-center gap-2 mt-1 text-cyan-500/60 font-mono text-xs">
+               <span className="w-2 h-2 rounded-full bg-cyan-500/50 animate-pulse" />
+               TOTAL SKUS: {supplies.length}
+            </div>
+         </div>
+         <div className="flex items-center gap-4">
+            {lowStockCount > 0 && (
+               <div className="px-3 py-1 bg-red-500/10 border border-red-500/30 rounded text-xs font-mono text-red-400 flex items-center gap-2 animate-pulse">
+                  <AlertTriangle className="w-3 h-3" />
+                  CRITICAL: {lowStockCount} ITEMS LOW
+               </div>
+            )}
+            <button
+               onClick={() => loadData()}
+               className="p-2 text-cyan-500/50 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-full transition-all"
+               title="Refresh Data"
+            >
+               <RefreshCw className="w-5 h-5" />
+            </button>
+         </div>
       </div>
 
       {error && (
-        <div className="bg-red-900/50 border border-red-500 rounded-lg p-4">
-          <p className="text-red-300 text-sm">{error}</p>
+        <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5" />
+          <span>{error}</span>
         </div>
       )}
 
-      {/* Category Filter */}
-      <div className="flex flex-wrap gap-2">
-        <button
-          onClick={() => setSelectedCategory(null)}
-          className={`px-3 py-1 rounded text-sm ${
-            selectedCategory === null ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'
-          }`}
-        >
-          All ({supplies.length})
-        </button>
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setSelectedCategory(cat)}
-            className={`px-3 py-1 rounded text-sm ${
-              selectedCategory === cat ? 'bg-blue-600 text-white' : categoryColors[cat]
+      {/* Category Filter Bar */}
+      <div className="flex overflow-x-auto pb-2 gap-2 scrollbar-thin scrollbar-thumb-space-700 scrollbar-track-transparent">
+         <button
+            onClick={() => setSelectedCategory(null)}
+            className={`flex items-center gap-2 px-4 py-2 rounded border transition-all whitespace-nowrap ${
+               selectedCategory === null
+                  ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.2)]'
+                  : 'bg-space-900/50 border-space-700 text-cyan-500/50 hover:border-cyan-500/30 hover:text-cyan-400'
             }`}
-          >
-            {cat} ({supplies.filter((s) => s.category === cat).length})
-          </button>
-        ))}
+         >
+            <Filter className="w-3 h-3" />
+            <span className="font-mono uppercase text-xs">All Categories</span>
+         </button>
+         {categories.map((cat) => (
+            <button
+               key={cat}
+               onClick={() => setSelectedCategory(cat)}
+               className={`px-4 py-2 rounded border transition-all whitespace-nowrap font-mono uppercase text-xs ${
+                  selectedCategory === cat
+                     ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.2)]'
+                     : 'bg-space-900/50 border-space-700 text-cyan-500/50 hover:border-cyan-500/30 hover:text-cyan-400'
+               }`}
+            >
+               {cat}
+            </button>
+         ))}
       </div>
 
-      {/* Supplies Table */}
-      <div className="bg-gray-800 rounded-lg overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-700">
-            <tr>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">Item</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">Category</th>
-              <th className="px-4 py-3 text-right text-sm font-medium text-gray-300">Quantity</th>
-              <th className="px-4 py-3 text-right text-sm font-medium text-gray-300">Min Threshold</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">Status</th>
-              <th className="px-4 py-3 text-right text-sm font-medium text-gray-300">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-700">
-            {filteredSupplies.map((supply) => (
-              <tr key={supply.id} className={`hover:bg-gray-700/50 ${supply.isLowStock ? 'bg-red-900/20' : ''}`}>
-                <td className="px-4 py-3 text-white">{supply.name}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded text-xs ${categoryColors[supply.category]}`}>
-                    {supply.category}
-                  </span>
-                </td>
-                <td className={`px-4 py-3 text-right ${supply.isLowStock ? 'text-red-400' : 'text-white'}`}>
-                  {supply.quantity} {supply.unit}
-                </td>
-                <td className="px-4 py-3 text-right text-gray-400">
-                  {supply.minThreshold} {supply.unit}
-                </td>
-                <td className="px-4 py-3">
-                  {supply.isLowStock ? (
-                    <span className="text-red-400 text-sm">LOW STOCK</span>
-                  ) : (
-                    <span className="text-green-400 text-sm">OK</span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+         {/* Main Supply List */}
+         <div className="lg:col-span-2 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               {filteredSupplies.map((supply) => (
+                  <Card key={supply.id} className={`transition-all hover:bg-space-800/30 ${supply.isLowStock ? 'border-l-2 border-l-red-500' : ''}`} noPadding>
+                     <div className="p-4">
+                        <div className="flex justify-between items-start mb-3">
+                           <div>
+                              <div className="font-bold text-cyan-100 tracking-wide">{supply.name}</div>
+                              <span className={`inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider border ${getCategoryColor(supply.category)}`}>
+                                 {supply.category}
+                              </span>
+                           </div>
+                           <div className="text-right">
+                              <div className={`text-xl font-mono font-bold ${supply.isLowStock ? 'text-red-400' : 'text-emerald-400'}`}>
+                                 {supply.quantity}
+                              </div>
+                              <div className="text-[10px] text-cyan-500/50 uppercase">{supply.unit}</div>
+                           </div>
+                        </div>
+                        
+                        {/* Progress Bar for Stock Level (Simulated max based on minThreshold * 3) */}
+                        <div className="w-full h-1 bg-space-950 rounded-full overflow-hidden mb-4">
+                           <div 
+                              className={`h-full ${supply.isLowStock ? 'bg-red-500' : 'bg-emerald-500'}`}
+                              style={{ width: `${Math.min(100, (supply.quantity / (supply.minThreshold * 3)) * 100)}%` }}
+                           />
+                        </div>
+
+                        <div className="flex gap-2">
+                           <button
+                              onClick={() => openConsumeModal(supply)}
+                              disabled={supply.quantity === 0}
+                              className="flex-1 py-1.5 flex items-center justify-center gap-2 rounded border border-orange-500/30 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 text-xs font-mono uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                           >
+                              <MinusCircle className="w-3 h-3" />
+                              Use
+                           </button>
+                           <button
+                              onClick={() => openResupplyModal(supply)}
+                              className="flex-1 py-1.5 flex items-center justify-center gap-2 rounded border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 text-xs font-mono uppercase tracking-wider transition-all"
+                           >
+                              <PlusCircle className="w-3 h-3" />
+                              Order
+                           </button>
+                        </div>
+                     </div>
+                  </Card>
+               ))}
+            </div>
+         </div>
+
+         {/* Sidebar: Cargo & History */}
+         <div className="space-y-6">
+            {/* Pending Cargo */}
+            <Card title="Cargo Manifests" subtitle="Pending Unloading" className="h-fit">
+               {manifests.filter((m) => m.status === 'PENDING').length === 0 ? (
+                  <div className="text-center py-8 text-cyan-500/30">
+                     <Box className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                     <div className="text-xs font-mono uppercase tracking-widest">No pending cargo</div>
+                  </div>
+               ) : (
+                  <div className="space-y-4">
+                     {manifests
+                        .filter((m) => m.status === 'PENDING')
+                        .map((manifest) => (
+                           <div key={manifest.id} className="p-3 bg-space-950/30 rounded border border-space-800">
+                              <div className="flex justify-between items-start mb-2">
+                                 <div>
+                                    <div className="font-bold text-cyan-100 text-sm">{manifest.shipName}</div>
+                                    <div className="text-[10px] text-cyan-500/50 uppercase tracking-wider">{new Date(manifest.createdAt).toLocaleDateString()}</div>
+                                 </div>
+                                 <button
+                                    onClick={() => handleUnload(manifest.id)}
+                                    disabled={unloadingManifest === manifest.id}
+                                    className="p-1.5 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded transition-all disabled:opacity-50"
+                                    title="Unload Cargo"
+                                 >
+                                    {unloadingManifest === manifest.id ? (
+                                       <div className="w-4 h-4 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
+                                    ) : (
+                                       <Box className="w-4 h-4" />
+                                    )}
+                                 </button>
+                              </div>
+                              <div className="space-y-1">
+                                 {manifest.items.map((item) => (
+                                    <div key={item.id} className="flex justify-between text-xs text-cyan-500/70 font-mono">
+                                       <span>{item.supplyName}</span>
+                                       <span>x{item.quantity}</span>
+                                    </div>
+                                 ))}
+                              </div>
+                           </div>
+                        ))}
+                  </div>
+               )}
+            </Card>
+
+            {/* Recent Orders */}
+            <Card title="Resupply Log" subtitle="Recent Requests" className="h-fit">
+               <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-space-700">
+                  {resupplyRequests.map((req) => (
+                     <div key={req.id} className="flex items-center justify-between p-2 border-b border-space-800/50 last:border-0">
+                        <div>
+                           <div className="text-sm text-cyan-100">{req.supplyName}</div>
+                           <div className="text-[10px] text-cyan-500/50 uppercase tracking-wider">
+                              QTY: {req.quantity} • {new Date(req.requestedAt).toLocaleDateString()}
+                           </div>
+                        </div>
+                        <div className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider border ${
+                           req.status === 'DELIVERED' ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10' :
+                           req.status === 'IN_TRANSIT' ? 'text-blue-400 border-blue-500/30 bg-blue-500/10' :
+                           'text-yellow-400 border-yellow-500/30 bg-yellow-500/10'
+                        }`}>
+                           {req.status}
+                        </div>
+                     </div>
+                  ))}
+                  {resupplyRequests.length === 0 && (
+                     <div className="text-center py-4 text-cyan-500/30 text-xs font-mono uppercase">No recent requests</div>
                   )}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <div className="flex gap-1 justify-end">
-                    <button
-                      onClick={() => openConsumeModal(supply)}
-                      disabled={supply.quantity === 0}
-                      className={`px-2 py-1 rounded text-xs ${
-                        supply.quantity === 0
-                          ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                          : 'bg-orange-600 hover:bg-orange-700 text-white'
-                      }`}
-                    >
-                      Use
-                    </button>
-                    <button
-                      onClick={() => openResupplyModal(supply)}
-                      className="px-2 py-1 bg-green-600 hover:bg-green-700 rounded text-xs text-white"
-                    >
-                      Resupply
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+               </div>
+            </Card>
+         </div>
       </div>
 
-      {/* Pending Cargo */}
-      {manifests.filter((m) => m.status === 'PENDING').length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold text-white mb-4">Pending Cargo</h3>
-          <div className="space-y-3">
-            {manifests
-              .filter((m) => m.status === 'PENDING')
-              .map((manifest) => (
-                <div key={manifest.id} className="bg-gray-800 rounded-lg p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-medium text-white">{manifest.shipName}</h4>
-                      <p className="text-sm text-gray-400">
-                        {manifest.items.length} items |{' '}
-                        {new Date(manifest.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleUnload(manifest.id)}
-                      disabled={unloadingManifest === manifest.id}
-                      className={`px-3 py-1 rounded text-sm ${
-                        unloadingManifest === manifest.id
-                          ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                          : 'bg-green-600 hover:bg-green-700 text-white'
-                      }`}
-                    >
-                      {unloadingManifest === manifest.id ? 'Unloading...' : 'Unload'}
-                    </button>
+      {/* Action Modals */}
+      <AnimatePresence>
+         {/* Consume Modal */}
+         {consumingSupply && (
+            <div className="fixed inset-0 bg-space-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+               <motion.div 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="bg-space-900 border border-space-700 rounded-lg max-w-sm w-full shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden"
+               >
+                  <div className="p-4 border-b border-space-700 bg-space-950/50">
+                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <MinusCircle className="w-5 h-5 text-orange-400" />
+                        Dispense Item
+                     </h3>
                   </div>
-                  <div className="mt-2 text-sm text-gray-400">
-                    {manifest.items.map((item) => (
-                      <span key={item.id} className="mr-3">
-                        {item.supplyName}: {item.quantity}
-                      </span>
-                    ))}
+                  
+                  <div className="p-6 space-y-6">
+                     <div className="text-center">
+                        <div className="text-2xl font-bold text-cyan-100">{consumingSupply.name}</div>
+                        <div className="text-sm text-cyan-500/50 font-mono uppercase mt-1">
+                           Available: {consumingSupply.quantity} {consumingSupply.unit}
+                        </div>
+                     </div>
+
+                     <div className="space-y-2">
+                        <div className="flex justify-between text-xs text-cyan-500/70 font-mono uppercase">
+                           <span>Amount</span>
+                           <span>{consumeQuantity} {consumingSupply.unit}</span>
+                        </div>
+                        <input
+                           type="range"
+                           min="1"
+                           max={consumingSupply.quantity}
+                           value={consumeQuantity}
+                           onChange={(e) => setConsumeQuantity(parseInt(e.target.value))}
+                           className="w-full accent-orange-500 h-1 bg-space-800 rounded-lg appearance-none cursor-pointer"
+                        />
+                     </div>
+
+                     {consumingSupply.quantity - consumeQuantity < consumingSupply.minThreshold && (
+                        <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded text-yellow-400 text-xs flex items-center gap-2">
+                           <AlertTriangle className="w-4 h-4 shrink-0" />
+                           Warning: Stock will fall below minimum threshold.
+                        </div>
+                     )}
                   </div>
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
 
-      {/* Resupply Requests */}
-      {resupplyRequests.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold text-white mb-4">Resupply Requests</h3>
-          <div className="bg-gray-800 rounded-lg overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-700">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">Item</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-300">Quantity</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">Status</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">Requested</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700">
-                {resupplyRequests.map((req) => (
-                  <tr key={req.id}>
-                    <td className="px-4 py-3 text-white">{req.supplyName}</td>
-                    <td className="px-4 py-3 text-right text-gray-400">{req.quantity}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        req.status === 'DELIVERED' ? 'bg-green-900 text-green-300' :
-                        req.status === 'IN_TRANSIT' ? 'bg-blue-900 text-blue-300' :
-                        req.status === 'APPROVED' ? 'bg-yellow-900 text-yellow-300' :
-                        'bg-gray-700 text-gray-300'
-                      }`}>
-                        {req.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-400 text-sm">
-                      {new Date(req.requestedAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      <button
-        onClick={loadData}
-        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm"
-      >
-        Refresh
-      </button>
-
-      {/* Consume Modal */}
-      {consumingSupply && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-white mb-4">
-              Use Supply: {consumingSupply.name}
-            </h3>
-            
-            <p className="text-gray-400 text-sm mb-4">
-              Available: <span className="text-white">{consumingSupply.quantity} {consumingSupply.unit}</span>
-            </p>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Quantity to use: {consumeQuantity} {consumingSupply.unit}
-              </label>
-              <input
-                type="range"
-                min="1"
-                max={consumingSupply.quantity}
-                value={consumeQuantity}
-                onChange={(e) => setConsumeQuantity(parseInt(e.target.value))}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>1</span>
-                <span>{Math.round(consumingSupply.quantity / 2)}</span>
-                <span>{consumingSupply.quantity}</span>
-              </div>
+                  <div className="p-4 border-t border-space-700 bg-space-950/50 flex gap-3">
+                     <button
+                        onClick={() => setConsumingSupply(null)}
+                        className="flex-1 py-2 text-cyan-500/70 hover:text-cyan-400 font-mono text-sm uppercase tracking-wider"
+                     >
+                        Cancel
+                     </button>
+                     <button
+                        onClick={handleConsume}
+                        disabled={consumeLoading}
+                        className="flex-1 py-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border border-orange-500/50 rounded transition-all font-mono text-sm uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50"
+                     >
+                        {consumeLoading ? 'Dispensing...' : 'Confirm'}
+                     </button>
+                  </div>
+               </motion.div>
             </div>
+         )}
 
-            {consumingSupply.quantity - consumeQuantity < consumingSupply.minThreshold && (
-              <div className="bg-yellow-900/50 border border-yellow-500 rounded p-2 mb-4">
-                <p className="text-yellow-300 text-xs">
-                  Warning: This will bring stock below minimum threshold
-                </p>
-              </div>
-            )}
+         {/* Resupply Modal */}
+         {resupplyingSupply && (
+            <div className="fixed inset-0 bg-space-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+               <motion.div 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="bg-space-900 border border-space-700 rounded-lg max-w-sm w-full shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden"
+               >
+                  <div className="p-4 border-b border-space-700 bg-space-950/50">
+                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <ShoppingCart className="w-5 h-5 text-cyan-400" />
+                        Requisition Request
+                     </h3>
+                  </div>
+                  
+                  <div className="p-6 space-y-6">
+                     <div className="text-center">
+                        <div className="text-2xl font-bold text-cyan-100">{resupplyingSupply.name}</div>
+                        <div className="text-sm text-cyan-500/50 font-mono uppercase mt-1">
+                           Current Stock: {resupplyingSupply.quantity} {resupplyingSupply.unit}
+                        </div>
+                     </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={handleConsume}
-                disabled={consumeLoading}
-                className={`flex-1 py-2 rounded text-sm ${
-                  consumeLoading
-                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                    : 'bg-orange-600 hover:bg-orange-700 text-white'
-                }`}
-              >
-                {consumeLoading ? 'Processing...' : 'Confirm Use'}
-              </button>
-              <button
-                onClick={() => setConsumingSupply(null)}
-                disabled={consumeLoading}
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded text-sm"
-              >
-                Cancel
-              </button>
+                     <div className="space-y-2">
+                        <div className="flex justify-between text-xs text-cyan-500/70 font-mono uppercase">
+                           <span>Order Quantity</span>
+                           <span>{resupplyQuantity} {resupplyingSupply.unit}</span>
+                        </div>
+                        <input
+                           type="range"
+                           min={resupplyingSupply.minThreshold}
+                           max={resupplyingSupply.minThreshold * 5}
+                           step={10}
+                           value={resupplyQuantity}
+                           onChange={(e) => setResupplyQuantity(parseInt(e.target.value))}
+                           className="w-full accent-cyan-500 h-1 bg-space-800 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <div className="flex justify-between text-[10px] text-cyan-500/30 font-mono uppercase">
+                           <span>Min ({resupplyingSupply.minThreshold})</span>
+                           <span>Max ({resupplyingSupply.minThreshold * 5})</span>
+                        </div>
+                     </div>
+                  </div>
+
+                  <div className="p-4 border-t border-space-700 bg-space-950/50 flex gap-3">
+                     <button
+                        onClick={() => setResupplyingSupply(null)}
+                        className="flex-1 py-2 text-cyan-500/70 hover:text-cyan-400 font-mono text-sm uppercase tracking-wider"
+                     >
+                        Cancel
+                     </button>
+                     <button
+                        onClick={handleResupply}
+                        disabled={resupplyLoading}
+                        className="flex-1 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/50 rounded transition-all font-mono text-sm uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50"
+                     >
+                        {resupplyLoading ? 'Transmitting...' : 'Submit Order'}
+                     </button>
+                  </div>
+               </motion.div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Resupply Modal */}
-      {resupplyingSupply && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-white mb-4">
-              Request Resupply: {resupplyingSupply.name}
-            </h3>
-            
-            <p className="text-gray-400 text-sm mb-2">
-              Current stock: <span className={resupplyingSupply.isLowStock ? 'text-red-400' : 'text-white'}>
-                {resupplyingSupply.quantity} {resupplyingSupply.unit}
-              </span>
-            </p>
-            <p className="text-gray-400 text-sm mb-4">
-              Minimum threshold: <span className="text-white">{resupplyingSupply.minThreshold} {resupplyingSupply.unit}</span>
-            </p>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Quantity to request: {resupplyQuantity} {resupplyingSupply.unit}
-              </label>
-              <input
-                type="range"
-                min={resupplyingSupply.minThreshold}
-                max={resupplyingSupply.minThreshold * 5}
-                step={10}
-                value={resupplyQuantity}
-                onChange={(e) => setResupplyQuantity(parseInt(e.target.value))}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>{resupplyingSupply.minThreshold}</span>
-                <span>{resupplyingSupply.minThreshold * 3}</span>
-                <span>{resupplyingSupply.minThreshold * 5}</span>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={handleResupply}
-                disabled={resupplyLoading}
-                className={`flex-1 py-2 rounded text-sm ${
-                  resupplyLoading
-                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                    : 'bg-green-600 hover:bg-green-700 text-white'
-                }`}
-              >
-                {resupplyLoading ? 'Submitting...' : 'Submit Request'}
-              </button>
-              <button
-                onClick={() => setResupplyingSupply(null)}
-                disabled={resupplyLoading}
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded text-sm"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+         )}
+      </AnimatePresence>
     </div>
   );
 }
