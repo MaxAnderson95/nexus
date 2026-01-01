@@ -45,7 +45,7 @@ NEXUS Station simulates operations management for a space station, including:
 | Component | Technology |
 |-----------|------------|
 | Backend Services | Java 17, Spring Boot 3.4.1 |
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS |
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS, Framer Motion, Lucide React |
 | Database | PostgreSQL 16 (schema-per-service) |
 | Cache | Redis 7 |
 | Load Testing | Locust (Python) |

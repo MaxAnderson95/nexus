@@ -132,31 +132,37 @@ function Crew() {
 
   useEffect(() => { loadData(); }, []);
 
-  async function loadData() {
+  // Use 'init' parameter for silent background updates (preventing full reload/skeleton)
+  async function loadData(init = true) {
     try {
-      setLoading(true);
+      if (init) setLoading(true);
       setError(null);
       const result = await api.crew.getRoster();
       setData(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load');
     } finally {
-      setLoading(false);
+      if (init) setLoading(false);
     }
+  }
+
+  // Example: Silent refresh after action
+  async function handleAction() {
+    await api.crew.updateMember();
+    await loadData(false); // No loading spinner
   }
 
   // ... render
 }
 ```
 
-**Type Definitions:**
-- Use `interface` for object types
-- Use union types for enums: `'ACTIVE' | 'INACTIVE'`
-- Nullable fields: `field: Type | null`
-
 **Styling:**
-- Use Tailwind CSS classes inline
-- Status colors via objects: `const colors = { ACTIVE: 'text-green-400', ... }`
+- **Theme:** Cinematic Sci-Fi (Dark mode default)
+- **Framework:** Tailwind CSS + Framer Motion (animations) + Lucide React (icons)
+- **Colors:** Custom 'space' palette (deep blues/blacks), Cyan/Emerald/Red accents for status
+- **Typography:** 'Rajdhani' (headings), 'Share Tech Mono' (data/code)
+- **Components:** Use `Card` from `components/ui/Card.tsx` for consistency
+
 
 ## Architecture Patterns
 
