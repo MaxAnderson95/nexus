@@ -1,0 +1,39 @@
+#!/bin/sh
+# Maven Wrapper script
+# This is a simplified version - in production, use the full mvnw from Maven
+
+set -e
+
+# Find the project base directory
+MAVEN_PROJECTBASEDIR="${MAVEN_BASEDIR:-$(cd "$(dirname "$0")" && pwd)}"
+export MAVEN_PROJECTBASEDIR
+
+# Download Maven wrapper jar if needed
+WRAPPER_JAR="$MAVEN_PROJECTBASEDIR/.mvn/wrapper/maven-wrapper.jar"
+WRAPPER_PROPERTIES="$MAVEN_PROJECTBASEDIR/.mvn/wrapper/maven-wrapper.properties"
+
+if [ -f "$WRAPPER_PROPERTIES" ]; then
+    WRAPPER_URL=$(grep "wrapperUrl" "$WRAPPER_PROPERTIES" | cut -d'=' -f2-)
+    MAVEN_URL=$(grep "distributionUrl" "$WRAPPER_PROPERTIES" | cut -d'=' -f2-)
+fi
+
+WRAPPER_URL="${WRAPPER_URL:-https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.2.0/maven-wrapper-3.2.0.jar}"
+
+# Check if maven-wrapper.jar exists, if not download it
+if [ ! -f "$WRAPPER_JAR" ]; then
+    echo "Downloading Maven Wrapper..."
+    if command -v curl > /dev/null 2>&1; then
+        curl -fsSL -o "$WRAPPER_JAR" "$WRAPPER_URL"
+    elif command -v wget > /dev/null 2>&1; then
+        wget -q -O "$WRAPPER_JAR" "$WRAPPER_URL"
+    else
+        echo "Error: Neither curl nor wget found. Cannot download Maven Wrapper."
+        exit 1
+    fi
+fi
+
+# Run Maven with the wrapper
+exec java $MAVEN_OPTS \
+    -Dmaven.multiModuleProjectDirectory="$MAVEN_PROJECTBASEDIR" \
+    -classpath "$WRAPPER_JAR" \
+    org.apache.maven.wrapper.MavenWrapperMain "$@"

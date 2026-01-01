@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nexus-station.fullname" . }}-docking-service
+  labels:
+    {{- include "nexus-station.componentLabels" (dict "root" . "component" "docking-service") | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.dockingService.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "nexus-station.componentSelectorLabels" (dict "root" . "component" "docking-service") | nindent 4 }}

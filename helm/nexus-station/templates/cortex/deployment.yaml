@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nexus-station.fullname" . }}-cortex
+  labels:
+    {{- include "nexus-station.componentLabels" (dict "root" . "component" "cortex") | nindent 4 }}
+spec:
+  replicas: {{ .Values.cortex.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "nexus-station.componentSelectorLabels" (dict "root" . "component" "cortex") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "nexus-station.componentSelectorLabels" (dict "root" . "component" "cortex") | nindent 8 }}
+    spec:
+      {{- include "nexus-station.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: cortex
+          image: {{ include "nexus-station.image" (dict "root" . "image" .Values.cortex.image) }}
+          imagePullPolicy: {{ .Values.cortex.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.cortex.service.port }}
+              protocol: TCP
+          env:
+            - name: SERVER_PORT
+              value: {{ .Values.cortex.service.port | quote }}
+            - name: DOCKING_SERVICE_URL
+              value: "http://{{ include "nexus-station.fullname" . }}-docking-service:{{ .Values.dockingService.service.port }}"
+            - name: CREW_SERVICE_URL
+              value: "http://{{ include "nexus-station.fullname" . }}-crew-service:{{ .Values.crewService.service.port }}"
+            - name: LIFE_SUPPORT_SERVICE_URL
+              value: "http://{{ include "nexus-station.fullname" . }}-life-support-service:{{ .Values.lifeSupportService.service.port }}"
+            - name: POWER_SERVICE_URL
+              value: "http://{{ include "nexus-station.fullname" . }}-power-service:{{ .Values.powerService.service.port }}"
+            - name: INVENTORY_SERVICE_URL
+              value: "http://{{ include "nexus-station.fullname" . }}-inventory-service:{{ .Values.inventoryService.service.port }}"
+            # OpenTelemetry configuration
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.global.otel.endpoint | quote }}
+            - name: OTEL_SERVICE_NAME
+              value: "cortex"
+            - name: CUSTOM_TELEMETRY_ENABLED
+              value: {{ .Values.cortex.customTelemetry.enabled | quote }}
+            # Chaos configuration
+            - name: CHAOS_ENABLED
+              value: {{ .Values.cortex.chaos.enabled | quote }}
+            - name: CHAOS_LATENCY_MS
+              value: {{ .Values.cortex.chaos.latencyMs | quote }}
+            - name: CHAOS_ERROR_RATE
+              value: {{ .Values.cortex.chaos.errorRate | quote }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "nexus-station.fullname" . }}-config
+            - secretRef:
+                name: {{ include "nexus-station.fullname" . }}-secrets
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.cortex.resources | nindent 12 }}

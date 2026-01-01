@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nexus-station.fullname" . }}-inventory-service
+  labels:
+    {{- include "nexus-station.componentLabels" (dict "root" . "component" "inventory-service") | nindent 4 }}
+spec:
+  replicas: {{ .Values.inventoryService.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "nexus-station.componentSelectorLabels" (dict "root" . "component" "inventory-service") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "nexus-station.componentSelectorLabels" (dict "root" . "component" "inventory-service") | nindent 8 }}
+    spec:
+      {{- include "nexus-station.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: inventory-service
+          image: {{ include "nexus-station.image" (dict "root" . "image" .Values.inventoryService.image) }}
+          imagePullPolicy: {{ .Values.inventoryService.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.inventoryService.service.port }}
+              protocol: TCP
+          env:
+            - name: SERVER_PORT
+              value: {{ .Values.inventoryService.service.port | quote }}
+            - name: SPRING_DATASOURCE_URL
+              value: {{ include "nexus-station.postgresUrl" . | quote }}
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nexus-station.fullname" . }}-secrets
+                  key: POSTGRES_USER
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nexus-station.fullname" . }}-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POWER_SERVICE_URL
+              value: "http://{{ include "nexus-station.fullname" . }}-power-service:{{ .Values.powerService.service.port }}"
+            - name: DOCKING_SERVICE_URL
+              value: "http://{{ include "nexus-station.fullname" . }}-docking-service:{{ .Values.dockingService.service.port }}"
+            # OpenTelemetry configuration
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.global.otel.endpoint | quote }}
+            - name: OTEL_SERVICE_NAME
+              value: "inventory-service"
+            - name: CUSTOM_TELEMETRY_ENABLED
+              value: {{ .Values.inventoryService.customTelemetry.enabled | quote }}
+            # Chaos configuration
+            - name: CHAOS_ENABLED
+              value: {{ .Values.inventoryService.chaos.enabled | quote }}
+            - name: CHAOS_LATENCY_MS
+              value: {{ .Values.inventoryService.chaos.latencyMs | quote }}
+            - name: CHAOS_ERROR_RATE
+              value: {{ .Values.inventoryService.chaos.errorRate | quote }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "nexus-station.fullname" . }}-config
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.inventoryService.resources | nindent 12 }}

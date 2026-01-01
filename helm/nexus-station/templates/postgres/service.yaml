@@ -1,0 +1,17 @@
+{{- if .Values.postgresql.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nexus-station.fullname" . }}-postgres
+  labels:
+    {{- include "nexus-station.componentLabels" (dict "root" . "component" "postgres") | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.postgresql.service.port }}
+      targetPort: postgres
+      protocol: TCP
+      name: postgres
+  selector:
+    {{- include "nexus-station.componentSelectorLabels" (dict "root" . "component" "postgres") | nindent 4 }}
+{{- end }}
