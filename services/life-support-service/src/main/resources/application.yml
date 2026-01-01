@@ -1,0 +1,68 @@
+spring:
+  application:
+    name: life-support-service
+  
+  # Database
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/nexus}
+    username: ${SPRING_DATASOURCE_USERNAME:nexus}
+    password: ${SPRING_DATASOURCE_PASSWORD:nexus}
+    hikari:
+      schema: life_support
+      connection-init-sql: SET search_path TO life_support,public
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: life_support
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+  
+  # Redis
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
+# Server
+server:
+  port: 8083
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+# Logging
+logging:
+  level:
+    com.nexus: DEBUG
+    org.springframework.web: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Application
+nexus:
+  telemetry:
+    custom-spans: ${ENABLE_CUSTOM_TELEMETRY:false}
+  chaos:
+    level: ${CHAOS:none}
+
+# Downstream services
+services:
+  power:
+    url: ${SERVICES_POWER_URL:http://localhost:8084}

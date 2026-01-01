@@ -1,0 +1,214 @@
+# Global settings
+global:
+  environment: production
+  domain: nexus.local
+  imageRegistry: ""
+  imagePullSecrets: []
+
+  otel:
+    # Set to true to disable OTel SDK (no exports)
+    disabled: false
+
+  chaos:
+    enabled: false
+    latencyMs: 0
+    errorRate: 0.0
+
+# CORTEX BFF service (includes frontend)
+cortex:
+  replicaCount: 2
+  image:
+    repository: nexus-station/cortex
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP  # Change to LoadBalancer or NodePort for external access
+    port: 8080
+    nodePort: ""  # Only used when type is NodePort
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  chaos:
+    enabled: false
+    latencyMs: 0
+    errorRate: 0.0
+  customTelemetry:
+    enabled: true
+
+# Docking service
+dockingService:
+  replicaCount: 2
+  image:
+    repository: nexus-station/docking-service
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  service:
+    port: 8081
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  chaos:
+    enabled: false
+    latencyMs: 0
+    errorRate: 0.0
+  customTelemetry:
+    enabled: true
+
+# Crew service
+crewService:
+  replicaCount: 2
+  image:
+    repository: nexus-station/crew-service
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  service:
+    port: 8082
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  chaos:
+    enabled: false
+    latencyMs: 0
+    errorRate: 0.0
+  customTelemetry:
+    enabled: true
+
+# Life support service
+lifeSupportService:
+  replicaCount: 2
+  image:
+    repository: nexus-station/life-support-service
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  service:
+    port: 8083
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  chaos:
+    enabled: false
+    latencyMs: 0
+    errorRate: 0.0
+  customTelemetry:
+    enabled: true
+
+# Power service
+powerService:
+  replicaCount: 2
+  image:
+    repository: nexus-station/power-service
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  service:
+    port: 8084
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  chaos:
+    enabled: false
+    latencyMs: 0
+    errorRate: 0.0
+  customTelemetry:
+    enabled: true
+
+# Inventory service
+inventoryService:
+  replicaCount: 2
+  image:
+    repository: nexus-station/inventory-service
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  service:
+    port: 8085
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  chaos:
+    enabled: false
+    latencyMs: 0
+    errorRate: 0.0
+  customTelemetry:
+    enabled: true
+
+# PostgreSQL
+postgresql:
+  enabled: true
+  image:
+    repository: postgres
+    tag: "15-alpine"
+    pullPolicy: IfNotPresent
+  auth:
+    database: nexus
+    username: nexus
+    password: nexus_password
+  service:
+    port: 5432
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Redis
+redis:
+  enabled: true
+  image:
+    repository: redis
+    tag: "7-alpine"
+    pullPolicy: IfNotPresent
+  service:
+    port: 6379
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Load generator (optional)
+loadGenerator:
+  enabled: false
+  image:
+    repository: nexus-station/load-generator
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  users: 10
+  spawnRate: 1
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi

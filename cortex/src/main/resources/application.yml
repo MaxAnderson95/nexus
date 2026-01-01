@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: cortex
+  web:
+    resources:
+      static-locations: file:/app/static/,classpath:/static/
+
+# Server
+server:
+  port: 8080
+
+# Downstream Services
+services:
+  docking:
+    url: ${SERVICES_DOCKING_URL:http://localhost:8081}
+  crew:
+    url: ${SERVICES_CREW_URL:http://localhost:8082}
+  life-support:
+    url: ${SERVICES_LIFE_SUPPORT_URL:http://localhost:8083}
+  power:
+    url: ${SERVICES_POWER_URL:http://localhost:8084}
+  inventory:
+    url: ${SERVICES_INVENTORY_URL:http://localhost:8085}
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+# Logging
+logging:
+  level:
+    com.nexus: DEBUG
+    org.springframework.web: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Application
+nexus:
+  telemetry:
+    custom-spans: ${ENABLE_CUSTOM_TELEMETRY:false}
+  chaos:
+    level: ${CHAOS:none}

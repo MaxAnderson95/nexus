@@ -1,0 +1,36 @@
+{{- if .Values.loadGenerator.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nexus-station.fullname" . }}-load-generator
+  labels:
+    {{- include "nexus-station.componentLabels" (dict "root" . "component" "load-generator") | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "nexus-station.componentSelectorLabels" (dict "root" . "component" "load-generator") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "nexus-station.componentSelectorLabels" (dict "root" . "component" "load-generator") | nindent 8 }}
+    spec:
+      {{- include "nexus-station.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: load-generator
+          image: {{ include "nexus-station.image" (dict "root" . "image" .Values.loadGenerator.image) }}
+          imagePullPolicy: {{ .Values.loadGenerator.image.pullPolicy }}
+          env:
+            - name: TARGET_HOST
+              value: "http://{{ include "nexus-station.fullname" . }}-cortex:{{ .Values.cortex.service.port }}"
+            - name: LOCUST_USERS
+              value: {{ .Values.loadGenerator.users | quote }}
+            - name: LOCUST_SPAWN_RATE
+              value: {{ .Values.loadGenerator.spawnRate | quote }}
+            - name: LOCUST_HEADLESS
+              value: "true"
+            - name: LOCUST_RUN_TIME
+              value: "0"
+          resources:
+            {{- toYaml .Values.loadGenerator.resources | nindent 12 }}
+{{- end }}

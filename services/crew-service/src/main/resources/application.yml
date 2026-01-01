@@ -1,0 +1,68 @@
+spring:
+  application:
+    name: crew-service
+  
+  # Database
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/nexus}
+    username: ${SPRING_DATASOURCE_USERNAME:nexus}
+    password: ${SPRING_DATASOURCE_PASSWORD:nexus}
+    hikari:
+      schema: crew
+      connection-init-sql: SET search_path TO crew,public
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: crew
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+  
+  # Redis
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
+# Server
+server:
+  port: 8082
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+# Logging
+logging:
+  level:
+    com.nexus: DEBUG
+    org.springframework.web: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Application
+nexus:
+  telemetry:
+    custom-spans: ${ENABLE_CUSTOM_TELEMETRY:false}
+  chaos:
+    level: ${CHAOS:none}
+
+# Downstream services
+services:
+  life-support:
+    url: ${SERVICES_LIFE_SUPPORT_URL:http://localhost:8083}

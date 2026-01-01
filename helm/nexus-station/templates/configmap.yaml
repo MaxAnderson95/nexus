@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "nexus-station.fullname" . }}-config
+  labels:
+    {{- include "nexus-station.labels" . | nindent 4 }}
+data:
+  ENVIRONMENT: {{ .Values.global.environment | quote }}
+  DOMAIN: {{ .Values.global.domain | quote }}
+
+  # OpenTelemetry configuration
+  OTEL_ENABLED: {{ .Values.global.otel.enabled | quote }}
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.global.otel.endpoint | quote }}
+
+  # Service URLs
+  CORTEX_URL: "http://{{ include "nexus-station.fullname" . }}-cortex:{{ .Values.cortex.service.port }}"
+  DOCKING_SERVICE_URL: "http://{{ include "nexus-station.fullname" . }}-docking-service:{{ .Values.dockingService.service.port }}"
+  CREW_SERVICE_URL: "http://{{ include "nexus-station.fullname" . }}-crew-service:{{ .Values.crewService.service.port }}"
+  LIFE_SUPPORT_SERVICE_URL: "http://{{ include "nexus-station.fullname" . }}-life-support-service:{{ .Values.lifeSupportService.service.port }}"
+  POWER_SERVICE_URL: "http://{{ include "nexus-station.fullname" . }}-power-service:{{ .Values.powerService.service.port }}"
+  INVENTORY_SERVICE_URL: "http://{{ include "nexus-station.fullname" . }}-inventory-service:{{ .Values.inventoryService.service.port }}"
+
+  # Database configuration
+  POSTGRES_HOST: "{{ include "nexus-station.fullname" . }}-postgres"
+  POSTGRES_PORT: {{ .Values.postgresql.service.port | quote }}
+  POSTGRES_DB: {{ .Values.postgresql.auth.database | quote }}
+
+  # Redis configuration
+  REDIS_HOST: "{{ include "nexus-station.fullname" . }}-redis"
+  REDIS_PORT: {{ .Values.redis.service.port | quote }}
+
+  # Global chaos configuration defaults
+  CHAOS_ENABLED: {{ .Values.global.chaos.enabled | quote }}
+  CHAOS_LATENCY_MS: {{ .Values.global.chaos.latencyMs | quote }}
+  CHAOS_ERROR_RATE: {{ .Values.global.chaos.errorRate | quote }}

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nexus-station.fullname" . }}-life-support-service
+  labels:
+    {{- include "nexus-station.componentLabels" (dict "root" . "component" "life-support-service") | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.lifeSupportService.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "nexus-station.componentSelectorLabels" (dict "root" . "component" "life-support-service") | nindent 4 }}

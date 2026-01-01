@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nexus-station.fullname" . }}-power-service
+  labels:
+    {{- include "nexus-station.componentLabels" (dict "root" . "component" "power-service") | nindent 4 }}
+spec:
+  replicas: {{ .Values.powerService.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "nexus-station.componentSelectorLabels" (dict "root" . "component" "power-service") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "nexus-station.componentSelectorLabels" (dict "root" . "component" "power-service") | nindent 8 }}
+    spec:
+      {{- include "nexus-station.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: power-service
+          image: {{ include "nexus-station.image" (dict "root" . "image" .Values.powerService.image) }}
+          imagePullPolicy: {{ .Values.powerService.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.powerService.service.port }}
+              protocol: TCP
+          env:
+            - name: SERVER_PORT
+              value: {{ .Values.powerService.service.port | quote }}
+            - name: SPRING_DATASOURCE_URL
+              value: {{ include "nexus-station.postgresUrl" . | quote }}
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nexus-station.fullname" . }}-secrets
+                  key: POSTGRES_USER
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nexus-station.fullname" . }}-secrets
+                  key: POSTGRES_PASSWORD
+            # OpenTelemetry configuration
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.global.otel.endpoint | quote }}
+            - name: OTEL_SERVICE_NAME
+              value: "power-service"
+            - name: CUSTOM_TELEMETRY_ENABLED
+              value: {{ .Values.powerService.customTelemetry.enabled | quote }}
+            # Chaos configuration
+            - name: CHAOS_ENABLED
+              value: {{ .Values.powerService.chaos.enabled | quote }}
+            - name: CHAOS_LATENCY_MS
+              value: {{ .Values.powerService.chaos.latencyMs | quote }}
+            - name: CHAOS_ERROR_RATE
+              value: {{ .Values.powerService.chaos.errorRate | quote }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "nexus-station.fullname" . }}-config
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.powerService.resources | nindent 12 }}
