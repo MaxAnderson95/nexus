@@ -28,7 +28,7 @@ spring:
 
 # Server
 server:
-  port: 8085
+  port: 8080
 
 # Actuator
 management:
@@ -64,6 +64,6 @@ nexus:
 # Downstream services
 services:
   docking:
-    url: ${SERVICES_DOCKING_URL:http://localhost:8081}
+    url: ${SERVICES_DOCKING_URL:http://localhost:8080}
   crew:
-    url: ${SERVICES_CREW_URL:http://localhost:8082}
+    url: ${SERVICES_CREW_URL:http://localhost:8080}

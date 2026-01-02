@@ -70,9 +70,12 @@ function Crew() {
     }
   }
 
-  const filteredCrew = crew.filter((c) => {
+  // Only show crew currently aboard the station (exclude those in transit)
+  const aboardCrew = crew.filter((c) => c.status !== 'IN_TRANSIT');
+
+  const filteredCrew = aboardCrew.filter((c) => {
     const matchesSection = selectedSection ? c.sectionId === selectedSection : true;
-    const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           c.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           c.rank.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSection && matchesSearch;
@@ -113,7 +116,7 @@ function Crew() {
             </h2>
             <div className="flex items-center gap-2 mt-1 text-cyan-500/60 font-mono text-xs">
                <span className="w-2 h-2 rounded-full bg-cyan-500/50 animate-pulse" />
-               TOTAL PERSONNEL: {crew.length}
+               PERSONNEL ABOARD: {aboardCrew.length}
             </div>
          </div>
          <div className="flex gap-2">
@@ -156,7 +159,7 @@ function Crew() {
         >
           <Filter className="w-4 h-4" />
           <span className="font-mono uppercase text-sm">All Sections</span>
-          <span className="text-xs bg-space-950 px-1.5 py-0.5 rounded text-cyan-500/70">{crew.length}</span>
+          <span className="text-xs bg-space-950 px-1.5 py-0.5 rounded text-cyan-500/70">{aboardCrew.length}</span>
         </button>
         
         {sections.map((section) => (

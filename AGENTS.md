@@ -221,11 +221,11 @@ Set via environment: `CHAOS_DEFAULT=low` or per-service: `POWER_CHAOS=high`
 | Service | Port |
 |---------|------|
 | CORTEX (BFF + Frontend) | 8080 |
-| Docking | 8081 |
-| Crew | 8082 |
-| Life Support | 8083 |
-| Power | 8084 |
-| Inventory | 8085 |
+| Docking | 8080 |
+| Crew | 8080 |
+| Life Support | 8080 |
+| Power | 8080 |
+| Inventory | 8080 |
 
 ## Service Dependencies
 

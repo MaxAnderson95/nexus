@@ -28,7 +28,7 @@ spring:
 
 # Server
 server:
-  port: 8082
+  port: 8080
 
 # Actuator
 management:
@@ -64,4 +64,4 @@ nexus:
 # Downstream services
 services:
   life-support:
-    url: ${SERVICES_LIFE_SUPPORT_URL:http://localhost:8083}
+    url: ${SERVICES_LIFE_SUPPORT_URL:http://localhost:8080}
