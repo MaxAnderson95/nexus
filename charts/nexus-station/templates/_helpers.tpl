@@ -25,7 +25,7 @@ Common labels
 */}}
 {{- define "nexus-station.labels" -}}
 helm.sh/chart: {{ include "nexus-station.chart" . }}
-app.kubernetes.io/name: {{ include "nexus-station.name" . }}
+app.kubernetes.io/part-of: {{ include "nexus-station.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
@@ -38,9 +38,8 @@ Selector labels for a component
 Usage: {{ include "nexus-station.selectorLabels" (dict "context" . "component" "cortex") }}
 */}}
 {{- define "nexus-station.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "nexus-station.name" .context }}
+app.kubernetes.io/name: {{ .component }}
 app.kubernetes.io/instance: {{ .context.Release.Name }}
-app.kubernetes.io/component: {{ .component }}
 {{- end }}
 
 {{/*
@@ -117,9 +116,16 @@ Common environment variables for all services
 
 {{/*
 OpenTelemetry environment variables
+Three modes:
+  1. Dash0 (default): enabled=false, sdkDisabled=false - No env vars, Dash0 operator injects them
+  2. Disabled: sdkDisabled=true - Sets OTEL_SDK_DISABLED=true
+  3. Manual: enabled=true - Full manual OTEL configuration
 */}}
 {{- define "nexus-station.otelEnv" -}}
-{{- if .Values.otel.enabled }}
+{{- if .Values.otel.sdkDisabled }}
+- name: OTEL_SDK_DISABLED
+  value: "true"
+{{- else if .Values.otel.enabled }}
 - name: OTEL_EXPORTER_OTLP_ENDPOINT
   value: {{ .Values.otel.endpoint | quote }}
 - name: OTEL_EXPORTER_OTLP_PROTOCOL

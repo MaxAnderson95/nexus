@@ -11,14 +11,20 @@ managedBy: "Helm"
 imagePullSecrets: []
 
 # OpenTelemetry configuration
+# Three modes:
+#   1. Dash0 (default): enabled=false, sdkDisabled=false - No OTEL env vars, Dash0 operator injects them
+#   2. Disabled: sdkDisabled=true - Sets OTEL_SDK_DISABLED=true to prevent errors without a collector
+#   3. Manual: enabled=true - Manually configure OTEL endpoint/protocol for custom collector
 otel:
-  # -- Enable OpenTelemetry integration
-  enabled: true
-  # -- OTLP endpoint URL
+  # -- Enable manual OpenTelemetry configuration (set endpoint/protocol below)
+  enabled: false
+  # -- Disable the OpenTelemetry SDK entirely (for clusters without Dash0 or a collector)
+  sdkDisabled: false
+  # -- OTLP endpoint URL (only used when enabled=true)
   endpoint: "http://otel-collector:4317"
-  # -- OTLP protocol (grpc or http/protobuf)
+  # -- OTLP protocol: grpc or http/protobuf (only used when enabled=true)
   protocol: "grpc"
-  # -- Use insecure connection
+  # -- Use insecure connection (only used when enabled=true)
   insecure: true
 
 # Cortex BFF service (includes frontend)
