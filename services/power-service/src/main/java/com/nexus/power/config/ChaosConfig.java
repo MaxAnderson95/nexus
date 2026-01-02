@@ -26,8 +26,8 @@ public class ChaosConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new ChaosInterceptor(chaosLevel))
-                .addPathPatterns("/api/**")
-                .excludePathPatterns("/actuator/**", "/api/admin/**", "/admin/**");
+                .addPathPatterns("/api/v1/**")
+                .excludePathPatterns("/actuator/**", "/api/v1/admin/**", "/admin/**");
     }
     
     public static class ChaosInterceptor implements HandlerInterceptor {
