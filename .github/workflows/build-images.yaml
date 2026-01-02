@@ -76,8 +76,30 @@ jobs:
       - name: Log in to OCI Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
 
+      - name: Get latest version and bump patch
+        id: version
+        run: |
+          # Try to get the latest version from the OCI registry
+          CURRENT_VERSION=$(helm show chart oci://${{ env.REGISTRY }}/${{ env.CHART_REPO }}/nexus-station 2>/dev/null | grep '^version:' | awk '{print $2}' || echo "")
+
+          if [ -z "$CURRENT_VERSION" ]; then
+            # No existing chart, start at 0.0.1
+            NEW_VERSION="0.0.1"
+          else
+            # Parse version and bump patch
+            MAJOR=$(echo "$CURRENT_VERSION" | cut -d. -f1)
+            MINOR=$(echo "$CURRENT_VERSION" | cut -d. -f2)
+            PATCH=$(echo "$CURRENT_VERSION" | cut -d. -f3)
+            NEW_PATCH=$((PATCH + 1))
+            NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
+          fi
+
+          echo "Current version: ${CURRENT_VERSION:-none}"
+          echo "New version: $NEW_VERSION"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
       - name: Package Helm chart
-        run: helm package ./helm/nexus-station
+        run: helm package ./helm/nexus-station --version ${{ steps.version.outputs.version }}
 
       - name: Push Helm chart to OCI Registry
         run: helm push nexus-station-*.tgz oci://${{ env.REGISTRY }}/${{ env.CHART_REPO }}
