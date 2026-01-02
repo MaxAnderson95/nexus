@@ -23,6 +23,8 @@ function Docking() {
 
   useEffect(() => {
     loadData();
+    const interval = setInterval(() => loadData(false), 5000);
+    return () => clearInterval(interval);
   }, []);
 
   async function loadData(init = true) {
