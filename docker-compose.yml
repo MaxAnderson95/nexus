@@ -54,7 +54,7 @@ services:
   # =============================================================================
 
   cortex:
-    build: ./cortex
+    build: ./services/cortex
     ports:
       - "8080:8080"
     environment:
