@@ -83,125 +83,90 @@ public class DataInitializer implements ApplicationRunner {
     }
     
     private void initializeShips() {
-        // Docked ships (2)
-        Ship cargoShip1 = new Ship();
-        cargoShip1.setName("MSV Stellar Hauler");
-        cargoShip1.setType(Ship.ShipType.CARGO);
-        cargoShip1.setCrewCount(12);
-        cargoShip1.setCargoCapacity(5000);
-        cargoShip1.setStatus(Ship.ShipStatus.DOCKED);
-        cargoShip1.setArrivalTime(Instant.now().minus(2, ChronoUnit.HOURS));
-        shipRepository.save(cargoShip1);
-        
-        Ship passengerShip = new Ship();
-        passengerShip.setName("CSV Pioneer");
-        passengerShip.setType(Ship.ShipType.PASSENGER);
-        passengerShip.setCrewCount(45);
-        passengerShip.setCargoCapacity(500);
-        passengerShip.setStatus(Ship.ShipStatus.DOCKED);
-        passengerShip.setArrivalTime(Instant.now().minus(5, ChronoUnit.HOURS));
-        shipRepository.save(passengerShip);
-        
-        // Incoming ships (3)
-        Ship supplyShip = new Ship();
-        supplyShip.setName("RSS Provision");
-        supplyShip.setType(Ship.ShipType.SUPPLY);
-        supplyShip.setCrewCount(8);
-        supplyShip.setCargoCapacity(3000);
-        supplyShip.setStatus(Ship.ShipStatus.INCOMING);
-        supplyShip.setArrivalTime(Instant.now().plus(30, ChronoUnit.MINUTES));
-        shipRepository.save(supplyShip);
-        
-        Ship researchShip = new Ship();
-        researchShip.setName("SRV Discovery");
-        researchShip.setType(Ship.ShipType.RESEARCH);
-        researchShip.setCrewCount(25);
-        researchShip.setCargoCapacity(1000);
-        researchShip.setStatus(Ship.ShipStatus.INCOMING);
-        researchShip.setArrivalTime(Instant.now().plus(2, ChronoUnit.HOURS));
-        shipRepository.save(researchShip);
-        
-        Ship militaryShip = new Ship();
-        militaryShip.setName("UNS Defender");
-        militaryShip.setType(Ship.ShipType.MILITARY);
-        militaryShip.setCrewCount(150);
-        militaryShip.setCargoCapacity(800);
-        militaryShip.setStatus(Ship.ShipStatus.INCOMING);
-        militaryShip.setArrivalTime(Instant.now().plus(4, ChronoUnit.HOURS));
-        shipRepository.save(militaryShip);
-        
-        log.info("Created 5 ships (2 docked, 3 incoming)");
+        // Docked ships (4)
+        createShip("MSV Stellar Hauler", Ship.ShipType.CARGO, 12, 5000, Ship.ShipStatus.DOCKED, -2);
+        createShip("CSV Pioneer", Ship.ShipType.PASSENGER, 45, 500, Ship.ShipStatus.DOCKED, -5);
+        createShip("RSS Quantum", Ship.ShipType.SUPPLY, 8, 3500, Ship.ShipStatus.DOCKED, -1);
+        createShip("SRV Horizon", Ship.ShipType.RESEARCH, 18, 1200, Ship.ShipStatus.DOCKED, -3);
+
+        // Departing ships (2)
+        createShip("MSV Trade Wind", Ship.ShipType.CARGO, 10, 4500, Ship.ShipStatus.DEPARTING, -6);
+        createShip("CSV Wanderer", Ship.ShipType.PASSENGER, 38, 400, Ship.ShipStatus.DEPARTING, -8);
+
+        // Incoming ships (19)
+        createShip("RSS Provision", Ship.ShipType.SUPPLY, 8, 3000, Ship.ShipStatus.INCOMING, 30);
+        createShip("SRV Discovery", Ship.ShipType.RESEARCH, 25, 1000, Ship.ShipStatus.INCOMING, 45);
+        createShip("UNS Defender", Ship.ShipType.MILITARY, 150, 800, Ship.ShipStatus.INCOMING, 60);
+        createShip("MSV Iron Clad", Ship.ShipType.CARGO, 14, 6000, Ship.ShipStatus.INCOMING, 75);
+        createShip("CSV Starliner", Ship.ShipType.PASSENGER, 120, 600, Ship.ShipStatus.INCOMING, 90);
+        createShip("RSS Bounty", Ship.ShipType.SUPPLY, 6, 2500, Ship.ShipStatus.INCOMING, 105);
+        createShip("SRV Pathfinder", Ship.ShipType.RESEARCH, 22, 900, Ship.ShipStatus.INCOMING, 120);
+        createShip("MSV Nebula Runner", Ship.ShipType.CARGO, 11, 4800, Ship.ShipStatus.INCOMING, 135);
+        createShip("UNS Vigilant", Ship.ShipType.MILITARY, 85, 700, Ship.ShipStatus.INCOMING, 150);
+        createShip("CSV Aurora", Ship.ShipType.PASSENGER, 95, 550, Ship.ShipStatus.INCOMING, 165);
+        createShip("RSS Harvest", Ship.ShipType.SUPPLY, 9, 3200, Ship.ShipStatus.INCOMING, 180);
+        createShip("SRV Endeavor", Ship.ShipType.RESEARCH, 30, 1100, Ship.ShipStatus.INCOMING, 200);
+        createShip("MSV Titan", Ship.ShipType.CARGO, 16, 7000, Ship.ShipStatus.INCOMING, 220);
+        createShip("CSV Meridian", Ship.ShipType.PASSENGER, 75, 480, Ship.ShipStatus.INCOMING, 240);
+        createShip("UNS Sentinel", Ship.ShipType.MILITARY, 110, 850, Ship.ShipStatus.INCOMING, 260);
+        createShip("RSS Stockpile", Ship.ShipType.SUPPLY, 7, 2800, Ship.ShipStatus.INCOMING, 280);
+        createShip("SRV Curiosity", Ship.ShipType.RESEARCH, 28, 950, Ship.ShipStatus.INCOMING, 300);
+        createShip("MSV Freighter Nine", Ship.ShipType.CARGO, 13, 5500, Ship.ShipStatus.INCOMING, 320);
+        createShip("CSV Nomad", Ship.ShipType.PASSENGER, 55, 420, Ship.ShipStatus.INCOMING, 340);
+
+        log.info("Created 25 ships (4 docked, 2 departing, 19 incoming)");
+    }
+
+    private Ship createShip(String name, Ship.ShipType type, int crewCount, int cargoCapacity,
+                            Ship.ShipStatus status, int minutesOffset) {
+        Ship ship = new Ship();
+        ship.setName(name);
+        ship.setType(type);
+        ship.setCrewCount(crewCount);
+        ship.setCargoCapacity(cargoCapacity);
+        ship.setStatus(status);
+        if (minutesOffset < 0) {
+            ship.setArrivalTime(Instant.now().minus(-minutesOffset, ChronoUnit.MINUTES));
+        } else {
+            ship.setArrivalTime(Instant.now().plus(minutesOffset, ChronoUnit.MINUTES));
+        }
+        return shipRepository.save(ship);
     }
     
     private void initializeDockingBays() {
         // Get the docked ships for assignment
         var dockedShips = shipRepository.findByStatus(Ship.ShipStatus.DOCKED);
-        
-        // Bay 1 - Occupied (by first docked ship)
-        DockingBay bay1 = new DockingBay();
-        bay1.setBayNumber(1);
-        bay1.setStatus(DockingBay.BayStatus.OCCUPIED);
-        bay1.setCapacity(6000);
-        if (!dockedShips.isEmpty()) {
-            bay1.setCurrentShipId(dockedShips.get(0).getId());
+
+        // Bay capacities for variety
+        int[] capacities = {6000, 4000, 5000, 3500, 5000, 8000, 4500, 6000, 3000, 5500, 7000, 4000};
+
+        // Create 12 bays - first 4 occupied by docked ships, rest available
+        for (int i = 0; i < 12; i++) {
+            DockingBay bay = new DockingBay();
+            bay.setBayNumber(i + 1);
+            bay.setCapacity(capacities[i]);
+
+            if (i < dockedShips.size()) {
+                // Occupied by docked ship
+                bay.setStatus(DockingBay.BayStatus.OCCUPIED);
+                bay.setCurrentShipId(dockedShips.get(i).getId());
+            } else {
+                // Available
+                bay.setStatus(DockingBay.BayStatus.AVAILABLE);
+            }
+
+            DockingBay savedBay = bayRepository.save(bay);
+
+            // Create docking log for occupied bays
+            if (i < dockedShips.size()) {
+                DockingLog dockLog = new DockingLog();
+                dockLog.setShipId(dockedShips.get(i).getId());
+                dockLog.setBayId(savedBay.getId());
+                dockLog.setAction(DockingLog.DockingAction.DOCK);
+                logRepository.save(dockLog);
+            }
         }
-        bayRepository.save(bay1);
-        
-        // Bay 2 - Occupied (by second docked ship)
-        DockingBay bay2 = new DockingBay();
-        bay2.setBayNumber(2);
-        bay2.setStatus(DockingBay.BayStatus.OCCUPIED);
-        bay2.setCapacity(4000);
-        if (dockedShips.size() > 1) {
-            bay2.setCurrentShipId(dockedShips.get(1).getId());
-        }
-        bayRepository.save(bay2);
-        
-        // Bay 3 - Reserved
-        DockingBay bay3 = new DockingBay();
-        bay3.setBayNumber(3);
-        bay3.setStatus(DockingBay.BayStatus.RESERVED);
-        bay3.setCapacity(5000);
-        bayRepository.save(bay3);
-        
-        // Bay 4 - Available
-        DockingBay bay4 = new DockingBay();
-        bay4.setBayNumber(4);
-        bay4.setStatus(DockingBay.BayStatus.AVAILABLE);
-        bay4.setCapacity(3000);
-        bayRepository.save(bay4);
-        
-        // Bay 5 - Available
-        DockingBay bay5 = new DockingBay();
-        bay5.setBayNumber(5);
-        bay5.setStatus(DockingBay.BayStatus.AVAILABLE);
-        bay5.setCapacity(5000);
-        bayRepository.save(bay5);
-        
-        // Bay 6 - Available
-        DockingBay bay6 = new DockingBay();
-        bay6.setBayNumber(6);
-        bay6.setStatus(DockingBay.BayStatus.AVAILABLE);
-        bay6.setCapacity(8000);
-        bayRepository.save(bay6);
-        
-        // Create docking logs for the occupied bays
-        if (!dockedShips.isEmpty()) {
-            DockingLog log1 = new DockingLog();
-            log1.setShipId(dockedShips.get(0).getId());
-            log1.setBayId(bay1.getId());
-            log1.setAction(DockingLog.DockingAction.DOCK);
-            logRepository.save(log1);
-        }
-        
-        if (dockedShips.size() > 1) {
-            DockingLog log2 = new DockingLog();
-            log2.setShipId(dockedShips.get(1).getId());
-            log2.setBayId(bay2.getId());
-            log2.setAction(DockingLog.DockingAction.DOCK);
-            logRepository.save(log2);
-        }
-        
-        log.info("Created 6 docking bays (2 occupied, 1 reserved, 3 available)");
+
+        log.info("Created 12 docking bays (4 occupied, 8 available)");
     }
 }

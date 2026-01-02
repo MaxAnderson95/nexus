@@ -13,7 +13,7 @@
     
     <groupId>com.nexus</groupId>
     <artifactId>inventory-service</artifactId>
-    <version>0.1.0</version>
+    <version>0.0.0-dev</version>
     <name>inventory-service</name>
     <description>NEXUS Station Inventory Management Service</description>
     

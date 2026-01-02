@@ -52,7 +52,14 @@ management:
 # Logging
 logging:
   level:
-    root: ${LOG_LEVEL:INFO}
+    root: INFO
+    com.nexus: ${LOG_LEVEL:INFO}
+    # Keep framework noise quiet even in debug mode
+    org.springframework.web: INFO
+    org.springframework.orm.jpa: INFO
+    org.hibernate: INFO
+    org.postgresql: INFO
+    io.opentelemetry: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 

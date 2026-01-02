@@ -87,4 +87,10 @@ public class LifeSupportController {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", ex.getMessage()));
     }
+
+    @ExceptionHandler(LifeSupportService.PowerAllocationException.class)
+    public ResponseEntity<Map<String, String>> handlePowerAllocationFailed(LifeSupportService.PowerAllocationException ex) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(Map.of("error", ex.getMessage()));
+    }
 }

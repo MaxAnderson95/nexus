@@ -228,40 +228,46 @@ public class CrewService {
         }
         
         Long previousSectionId = crewMember.getSectionId();
-        
-        // Update old section occupancy
+
+        // Notify life support of capacity changes FIRST before committing DB changes
+        // This ensures we can allocate power before moving the crew member
+        // Let any exceptions propagate to abort the transaction
+        lifeSupportClient.adjustCapacity(request.targetSectionId(), 1);
+
+        // Notify life support of decrease for source section
+        if (previousSectionId != null) {
+            try {
+                lifeSupportClient.adjustCapacity(previousSectionId, -1);
+            } catch (Exception e) {
+                log.error("Life support failed to process departure from section {}: {}",
+                        previousSectionId, e.getMessage());
+                // Rollback the target section capacity increase
+                try {
+                    lifeSupportClient.adjustCapacity(request.targetSectionId(), -1);
+                } catch (Exception rollbackEx) {
+                    log.error("Failed to rollback life support capacity: {}", rollbackEx.getMessage());
+                }
+                throw e; // Re-throw to abort the transaction
+            }
+        }
+
+        // Now update database records - life support has approved the transfer
         if (previousSectionId != null) {
             Section previousSection = sectionRepository.findById(previousSectionId).orElse(null);
             if (previousSection != null) {
                 previousSection.setCurrentOccupancy(
                         Math.max(0, previousSection.getCurrentOccupancy() - 1));
                 sectionRepository.save(previousSection);
-                
-                // Notify life support of decrease
-                try {
-                    lifeSupportClient.adjustCapacity(previousSectionId, -1);
-                } catch (Exception e) {
-                    log.warn("Failed to notify life support of departure from section {}: {}", 
-                            previousSectionId, e.getMessage());
-                }
             }
         }
-        
+
         // Update new section occupancy
         targetSection.setCurrentOccupancy(targetSection.getCurrentOccupancy() + 1);
         sectionRepository.save(targetSection);
-        
+
         // Update crew member
         crewMember.setSectionId(request.targetSectionId());
         crewMember = crewMemberRepository.save(crewMember);
-        
-        // Notify life support of increase
-        try {
-            lifeSupportClient.adjustCapacity(request.targetSectionId(), 1);
-        } catch (Exception e) {
-            log.warn("Failed to notify life support of arrival at section {}: {}", 
-                    request.targetSectionId(), e.getMessage());
-        }
         
         log.info("Successfully relocated crew member {} from section {} to section {}",
                 crewMember.getName(), previousSectionId, request.targetSectionId());
@@ -290,16 +296,20 @@ public class CrewService {
     
     private List<CrewMemberDto> performArrivalRegistration(RegisterArrivalRequest request) {
         log.info("Registering {} crew arrivals from ship {}", request.crewCount(), request.shipId());
-        
+
         // Find a section with available capacity
         Section arrivalSection = sectionRepository.findAll().stream()
                 .filter(s -> s.getCurrentOccupancy() < s.getMaxCapacity())
                 .findFirst()
                 .orElseThrow(() -> new SectionAtCapacityException(
                         "No sections available with capacity for incoming crew"));
-        
+
+        // Notify life support FIRST to ensure power can be allocated
+        // Let any exceptions propagate to abort the operation
+        lifeSupportClient.adjustCapacity(arrivalSection.getId(), request.crewCount());
+
         List<CrewMember> newCrewMembers = new java.util.ArrayList<>();
-        
+
         for (int i = 0; i < request.crewCount(); i++) {
             CrewMember crewMember = new CrewMember();
             crewMember.setName("Crew-Ship" + request.shipId() + "-" + (i + 1));
@@ -310,21 +320,14 @@ public class CrewService {
             crewMember.setArrivedAt(Instant.now());
             newCrewMembers.add(crewMemberRepository.save(crewMember));
         }
-        
+
         // Update section occupancy
         arrivalSection.setCurrentOccupancy(arrivalSection.getCurrentOccupancy() + request.crewCount());
         sectionRepository.save(arrivalSection);
-        
-        // Notify life support
-        try {
-            lifeSupportClient.adjustCapacity(arrivalSection.getId(), request.crewCount());
-        } catch (Exception e) {
-            log.warn("Failed to notify life support of crew arrival: {}", e.getMessage());
-        }
-        
-        log.info("Registered {} new crew members in section {}", 
+
+        log.info("Registered {} new crew members in section {}",
                 request.crewCount(), arrivalSection.getName());
-        
+
         return newCrewMembers.stream()
                 .map(member -> CrewMemberDto.fromEntity(member, arrivalSection.getName()))
                 .toList();
@@ -366,7 +369,7 @@ public class CrewService {
             super(message);
         }
     }
-    
+
     // Helper method to map entity to DTO efficiently
     private CrewMemberDto mapToDto(CrewMember member, List<Section> sections) {
         String sectionName = null;

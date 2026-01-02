@@ -112,6 +112,24 @@ function Dashboard() {
     setLastSync(new Date());
   }, [loadDocking, loadCrew, loadLifeSupport, loadPower, loadInventory]);
 
+  // Hard refresh: clear all state first, then fetch fresh data
+  // This ensures stale data is not shown during chaos/failures
+  const refreshAll = useCallback(() => {
+    // Wipe all existing data
+    setDocking({ data: null, loading: true, error: null });
+    setCrew({ data: null, loading: true, error: null });
+    setLifeSupport({ data: null, loading: true, error: null });
+    setPower({ data: null, loading: true, error: null });
+    setInventory({ data: null, loading: true, error: null });
+    // Fetch fresh data
+    loadDocking(false);
+    loadCrew(false);
+    loadLifeSupport(false);
+    loadPower(false);
+    loadInventory(false);
+    setLastSync(new Date());
+  }, [loadDocking, loadCrew, loadLifeSupport, loadPower, loadInventory]);
+
   useEffect(() => {
     loadAll(true);
     const interval = setInterval(() => loadAll(false), 15000);
@@ -189,7 +207,7 @@ function Dashboard() {
              </div>
           </div>
           <button
-             onClick={() => loadAll(true)}
+             onClick={refreshAll}
              className="p-2 text-cyan-500/50 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-full transition-all"
              title="Refresh All Data"
           >

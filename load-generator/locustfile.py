@@ -5,11 +5,11 @@ This Locust file simulates realistic user behavior for the space station
 management system. All requests go through the CORTEX BFF at /api/*.
 
 Features tested:
-- Dashboard status aggregation
-- Docking: dock/undock ships
-- Crew: view roster, relocate crew members
+- Dashboard: full status and individual summaries
+- Docking: view bays/ships, dock/undock ships, view logs
+- Crew: view roster, sections, relocate crew members
 - Life Support: environment monitoring, self-tests, adjustments, alerts
-- Power: grid status, allocate/deallocate power
+- Power: grid status, sources, allocate/deallocate power
 - Inventory: supplies, consume, resupply requests, cargo manifests
 """
 
@@ -19,34 +19,77 @@ import random
 
 class DashboardBehavior(SequentialTaskSet):
     """User checks the dashboard - most common behavior"""
-    
+
     @task
     def load_dashboard(self):
         """Load aggregated dashboard status"""
-        with self.client.get("/api/dashboard/status", 
+        with self.client.get("/api/dashboard/status",
                             name="/api/dashboard/status",
                             catch_response=True) as response:
             if response.status_code == 200:
                 response.success()
             else:
                 response.failure(f"Dashboard failed: {response.status_code}")
+
+    @task
+    def load_docking_summary(self):
+        """Load docking summary"""
+        self.client.get("/api/dashboard/docking", name="/api/dashboard/docking")
+
+    @task
+    def load_crew_summary(self):
+        """Load crew summary"""
+        self.client.get("/api/dashboard/crew", name="/api/dashboard/crew")
+
+    @task
+    def load_life_support_summary(self):
+        """Load life support summary"""
+        self.client.get("/api/dashboard/life-support", name="/api/dashboard/life-support")
+
+    @task
+    def load_power_summary(self):
+        """Load power summary"""
+        self.client.get("/api/dashboard/power", name="/api/dashboard/power")
+
+    @task
+    def load_inventory_summary(self):
+        """Load inventory summary"""
+        self.client.get("/api/dashboard/inventory", name="/api/dashboard/inventory")
         self.interrupt()
 
 
 class DockingBehavior(SequentialTaskSet):
     """User manages ship docking operations"""
-    
+
     @task
     def view_bays(self):
         """View all docking bays"""
         self.client.get("/api/docking/bays", name="/api/docking/bays")
-    
+
+    @task
+    def view_single_bay(self):
+        """View a single docking bay"""
+        response = self.client.get("/api/docking/bays",
+                                   name="/api/docking/bays [bay detail prep]")
+        if response.ok:
+            bays = response.json()
+            if bays and len(bays) > 0:
+                bay_id = random.choice(bays).get("id")
+                if bay_id:
+                    self.client.get(f"/api/docking/bays/{bay_id}",
+                                   name="/api/docking/bays/{id}")
+
+    @task
+    def view_all_ships(self):
+        """View all ships"""
+        self.client.get("/api/docking/ships", name="/api/docking/ships")
+
     @task
     def view_incoming(self):
         """View incoming ships"""
-        self.client.get("/api/docking/ships/incoming", 
+        self.client.get("/api/docking/ships/incoming",
                        name="/api/docking/ships/incoming")
-    
+
     @task
     def dock_ship(self):
         """Attempt to dock an incoming ship"""
@@ -59,7 +102,7 @@ class DockingBehavior(SequentialTaskSet):
                 if ship_id:
                     self.client.post(f"/api/docking/dock/{ship_id}",
                                     name="/api/docking/dock/{id}")
-    
+
     @task
     def undock_ship(self):
         """Attempt to undock a docked ship"""
@@ -74,7 +117,7 @@ class DockingBehavior(SequentialTaskSet):
                 if ship_id:
                     self.client.post(f"/api/docking/undock/{ship_id}",
                                     name="/api/docking/undock/{id}")
-    
+
     @task
     def view_logs(self):
         """View docking logs"""
@@ -84,17 +127,29 @@ class DockingBehavior(SequentialTaskSet):
 
 class CrewBehavior(SequentialTaskSet):
     """User manages crew roster"""
-    
+
     @task
     def view_roster(self):
         """View full crew roster"""
         self.client.get("/api/crew", name="/api/crew")
-    
+
+    @task
+    def view_single_member(self):
+        """View a single crew member"""
+        response = self.client.get("/api/crew", name="/api/crew [member prep]")
+        if response.ok:
+            roster = response.json()
+            if roster and len(roster) > 0:
+                member_id = random.choice(roster).get("id")
+                if member_id:
+                    self.client.get(f"/api/crew/{member_id}",
+                                   name="/api/crew/{id}")
+
     @task
     def view_sections(self):
         """View station sections"""
         self.client.get("/api/crew/sections", name="/api/crew/sections")
-    
+
     @task
     def view_section_members(self):
         """View members of a specific section"""
@@ -107,18 +162,18 @@ class CrewBehavior(SequentialTaskSet):
                 if section_id:
                     self.client.get(f"/api/crew/section/{section_id}",
                                    name="/api/crew/section/{id}")
-    
+
     @task
     def relocate_crew(self):
         """Relocate a crew member to a different section"""
         roster_resp = self.client.get("/api/crew", name="/api/crew [relocate prep]")
         sections_resp = self.client.get("/api/crew/sections",
                                         name="/api/crew/sections [relocate prep]")
-        
+
         if roster_resp.ok and sections_resp.ok:
             roster = roster_resp.json()
             sections = sections_resp.json()
-            
+
             if roster and len(sections) > 1:
                 # Pick a crew member that's not in transit
                 eligible = [c for c in roster if c.get("status") != "IN_TRANSIT"]
@@ -126,8 +181,8 @@ class CrewBehavior(SequentialTaskSet):
                     crew_member = random.choice(eligible)
                     current_section = crew_member.get("sectionId")
                     # Find sections with available capacity
-                    available_sections = [s for s in sections 
-                                         if s.get("id") != current_section 
+                    available_sections = [s for s in sections
+                                         if s.get("id") != current_section
                                          and s.get("currentOccupancy", 0) < s.get("maxCapacity", 10)]
                     if available_sections:
                         target = random.choice(available_sections)
@@ -142,13 +197,26 @@ class CrewBehavior(SequentialTaskSet):
 
 class LifeSupportBehavior(SequentialTaskSet):
     """User manages life support systems"""
-    
+
     @task
     def view_environment(self):
         """View environmental readings for all sections"""
         self.client.get("/api/life-support/environment",
                        name="/api/life-support/environment")
-    
+
+    @task
+    def view_single_section_environment(self):
+        """View environmental readings for a single section"""
+        response = self.client.get("/api/life-support/environment",
+                                   name="/api/life-support/environment [section prep]")
+        if response.ok:
+            sections = response.json()
+            if sections and len(sections) > 0:
+                section_id = random.choice(sections).get("sectionId")
+                if section_id:
+                    self.client.get(f"/api/life-support/environment/section/{section_id}",
+                                   name="/api/life-support/environment/section/{id}")
+
     @task
     def run_self_test(self):
         """Run self-test diagnostic on a section (2-3s delay)"""
@@ -175,7 +243,7 @@ class LifeSupportBehavior(SequentialTaskSet):
                                 response.success()  # Failed test is still a valid response
                         else:
                             response.failure(f"Self-test failed: {response.status_code}")
-    
+
     @task
     def adjust_environment(self):
         """Adjust environmental settings for a section"""
@@ -194,7 +262,7 @@ class LifeSupportBehavior(SequentialTaskSet):
                             "targetO2": round(random.uniform(20.5, 21.5), 1)
                         },
                         name="/api/life-support/environment/section/{id}/adjust")
-    
+
     @task
     def check_alerts(self):
         """Check and acknowledge alerts"""
@@ -215,22 +283,27 @@ class LifeSupportBehavior(SequentialTaskSet):
 
 class PowerBehavior(SequentialTaskSet):
     """User manages power grid"""
-    
+
     @task
     def view_grid(self):
         """View power grid status"""
         self.client.get("/api/power/grid", name="/api/power/grid")
-    
+
+    @task
+    def view_sources(self):
+        """View power sources"""
+        self.client.get("/api/power/sources", name="/api/power/sources")
+
     @task
     def view_allocations(self):
         """View current power allocations"""
         self.client.get("/api/power/allocations", name="/api/power/allocations")
-    
+
     @task
     def allocate_power(self):
         """Allocate power to a system"""
         systems = [
-            "research_lab", "medical_bay", "communications", 
+            "research_lab", "medical_bay", "communications",
             "sensors", "defense_systems", "cargo_handling",
             "recreation", "hydroponics", "fabrication"
         ]
@@ -242,7 +315,7 @@ class PowerBehavior(SequentialTaskSet):
                             "priority": random.randint(3, 8)
                         },
                         name="/api/power/allocate")
-    
+
     @task
     def deallocate_power(self):
         """Deallocate power from a system"""
@@ -264,12 +337,31 @@ class PowerBehavior(SequentialTaskSet):
 
 class InventoryBehavior(SequentialTaskSet):
     """User manages inventory and supplies"""
-    
+
     @task
     def view_inventory(self):
         """View all supplies"""
         self.client.get("/api/inventory/supplies", name="/api/inventory/supplies")
-    
+
+    @task
+    def view_single_supply(self):
+        """View a single supply item"""
+        response = self.client.get("/api/inventory/supplies",
+                                   name="/api/inventory/supplies [detail prep]")
+        if response.ok:
+            supplies = response.json()
+            if supplies and len(supplies) > 0:
+                supply_id = random.choice(supplies).get("id")
+                if supply_id:
+                    self.client.get(f"/api/inventory/supplies/{supply_id}",
+                                   name="/api/inventory/supplies/{id}")
+
+    @task
+    def view_low_stock(self):
+        """View low stock items"""
+        self.client.get("/api/inventory/supplies/low-stock",
+                       name="/api/inventory/supplies/low-stock")
+
     @task
     def consume_supplies(self):
         """Consume some supplies"""
@@ -290,7 +382,7 @@ class InventoryBehavior(SequentialTaskSet):
                                         "quantity": random.randint(1, max_consume)
                                     },
                                     name="/api/inventory/consume")
-    
+
     @task
     def request_resupply(self):
         """Request resupply for items"""
@@ -306,7 +398,7 @@ class InventoryBehavior(SequentialTaskSet):
                 item = random.choice(supplies)
             else:
                 return
-            
+
             item_id = item.get("id")
             min_threshold = item.get("minThreshold", 50)
             if item_id:
@@ -316,12 +408,24 @@ class InventoryBehavior(SequentialTaskSet):
                                     "quantity": random.randint(min_threshold, min_threshold * 3)
                                 },
                                 name="/api/inventory/resupply")
-    
+
+    @task
+    def view_resupply_requests(self):
+        """View resupply request status"""
+        self.client.get("/api/inventory/resupply-requests",
+                       name="/api/inventory/resupply-requests")
+
+    @task
+    def view_manifests(self):
+        """View cargo manifests"""
+        self.client.get("/api/inventory/cargo-manifests",
+                       name="/api/inventory/cargo-manifests")
+
     @task
     def unload_manifests(self):
-        """View and unload cargo manifests"""
+        """Unload pending cargo manifests"""
         response = self.client.get("/api/inventory/cargo-manifests",
-                                   name="/api/inventory/cargo-manifests")
+                                   name="/api/inventory/cargo-manifests [unload prep]")
         if response.ok:
             manifests = response.json()
             pending = [m for m in manifests if m.get("status") == "PENDING"]
@@ -332,38 +436,33 @@ class InventoryBehavior(SequentialTaskSet):
                     self.client.post(
                         f"/api/inventory/cargo-manifests/{manifest_id}/unload",
                         name="/api/inventory/cargo-manifests/{id}/unload")
-    
-    @task
-    def view_resupply_requests(self):
-        """View resupply request status"""
-        self.client.get("/api/inventory/resupply-requests", 
-                       name="/api/inventory/resupply-requests")
         self.interrupt()
 
 
 class StationOperator(HttpUser):
     """
     Simulates a station operations controller.
-    
+
     Behavior weights reflect realistic usage patterns:
     - Dashboard is checked most frequently
     - Docking operations are common
     - Other systems are checked less frequently
-    
-    Interactive features tested:
-    - Docking: dock/undock ships
-    - Crew: relocate crew members between sections
-    - Life Support: run self-tests (2-3s delay), adjust environment, acknowledge alerts
-    - Power: allocate/deallocate power to systems
-    - Inventory: consume supplies, request resupply, unload cargo
+
+    All UI interactions covered:
+    - Dashboard: full status + individual summaries (docking, crew, life-support, power, inventory)
+    - Docking: view bays/ships (list + detail), dock/undock ships, view logs
+    - Crew: view roster (list + detail), sections, section members, relocate crew
+    - Life Support: environment (all + single section), self-tests, adjustments, alerts
+    - Power: grid status, sources, allocations, allocate/deallocate
+    - Inventory: supplies (list + detail + low-stock), consume, resupply, manifests, unload
     """
-    
+
     # Wait between 1-5 seconds between tasks
     wait_time = between(1, 5)
-    
+
     # Default host (overridden by LOCUST_HOST env var)
     host = "http://nexus.local"
-    
+
     # Task weights determine frequency
     tasks = {
         DashboardBehavior: 5,      # Most common - checking status

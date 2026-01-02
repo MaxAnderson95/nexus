@@ -65,10 +65,12 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 export function extractErrorInfo(err: unknown, fallbackMessage: string): {
   message: string;
   traceId: string | null;
+  status?: number;
 } {
   const message = err instanceof Error ? err.message : fallbackMessage;
   const traceId = err instanceof ApiError ? err.traceId : null;
-  return { message, traceId };
+  const status = err instanceof ApiError ? err.status : undefined;
+  return { message, traceId, status };
 }
 
 export const api = {

@@ -13,7 +13,7 @@
     
     <groupId>com.nexus</groupId>
     <artifactId>crew-service</artifactId>
-    <version>0.1.0</version>
+    <version>0.0.0-dev</version>
     <name>crew-service</name>
     <description>NEXUS Station Crew Management Service</description>
     

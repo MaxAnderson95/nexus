@@ -55,7 +55,7 @@ public class DashboardController {
     
     @GetMapping("/status")
     public ResponseEntity<DashboardStatus> getDashboardStatus() {
-        log.info("Fetching dashboard status - initiating parallel calls to all services");
+        log.debug("Fetching dashboard status - initiating parallel calls to all services");
         
         Span parentSpan = Span.current();
         Context parentContext = Context.current();
@@ -157,7 +157,7 @@ public class DashboardController {
     // Individual service summary endpoints for independent loading
     @GetMapping("/docking")
     public ResponseEntity<DockingSummary> getDockingSummary() {
-        log.info("Fetching docking summary");
+        log.debug("Fetching docking summary");
         try {
             return ResponseEntity.ok(dockingClient.getSummary());
         } catch (Exception e) {
@@ -168,7 +168,7 @@ public class DashboardController {
 
     @GetMapping("/crew")
     public ResponseEntity<CrewSummary> getCrewSummary() {
-        log.info("Fetching crew summary");
+        log.debug("Fetching crew summary");
         try {
             return ResponseEntity.ok(crewClient.getSummary());
         } catch (Exception e) {
@@ -179,7 +179,7 @@ public class DashboardController {
 
     @GetMapping("/life-support")
     public ResponseEntity<LifeSupportSummary> getLifeSupportSummary() {
-        log.info("Fetching life support summary");
+        log.debug("Fetching life support summary");
         try {
             return ResponseEntity.ok(lifeSupportClient.getSummary());
         } catch (Exception e) {
@@ -190,7 +190,7 @@ public class DashboardController {
 
     @GetMapping("/power")
     public ResponseEntity<PowerSummary> getPowerSummary() {
-        log.info("Fetching power summary");
+        log.debug("Fetching power summary");
         try {
             return ResponseEntity.ok(powerClient.getSummary());
         } catch (Exception e) {
@@ -201,7 +201,7 @@ public class DashboardController {
 
     @GetMapping("/inventory")
     public ResponseEntity<InventorySummary> getInventorySummary() {
-        log.info("Fetching inventory summary");
+        log.debug("Fetching inventory summary");
         try {
             return ResponseEntity.ok(inventoryClient.getSummary());
         } catch (Exception e) {

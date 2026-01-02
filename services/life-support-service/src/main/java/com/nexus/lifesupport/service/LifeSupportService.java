@@ -211,7 +211,7 @@ public class LifeSupportService {
         settings.setCurrentOccupancy(newOccupancy);
         settingsRepository.save(settings);
         
-        // Request additional power if occupancy increased
+        // Request additional power if occupancy increased - this is critical and must succeed
         if (request.occupancyChange() > 0) {
             try {
                 double additionalPower = request.occupancyChange() * 5.0; // 5kW per person
@@ -221,7 +221,13 @@ public class LifeSupportService {
                         request.sectionId()
                 );
             } catch (Exception e) {
-                log.warn("Could not allocate additional power for capacity change: {}", e.getMessage());
+                log.error("Power allocation failed for capacity increase in section {}: {}",
+                        request.sectionId(), e.getMessage());
+                // Rollback the occupancy change
+                settings.setCurrentOccupancy(settings.getCurrentOccupancy() - request.occupancyChange());
+                settingsRepository.save(settings);
+                throw new PowerAllocationException(
+                        "Cannot increase section capacity: power allocation failed - " + e.getMessage());
             }
         }
         
@@ -423,5 +429,9 @@ public class LifeSupportService {
     
     public static class CapacityExceededException extends RuntimeException {
         public CapacityExceededException(String message) { super(message); }
+    }
+
+    public static class PowerAllocationException extends RuntimeException {
+        public PowerAllocationException(String message) { super(message); }
     }
 }

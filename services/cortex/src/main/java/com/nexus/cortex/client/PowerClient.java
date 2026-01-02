@@ -29,7 +29,7 @@ public class PowerClient {
     // === Summary for Dashboard ===
     
     public PowerSummary getSummary() {
-        log.info("Fetching power summary");
+        log.debug("Fetching power summary");
         
         try {
             Map<String, Object> grid = restClient.get()
@@ -73,7 +73,7 @@ public class PowerClient {
     // === Proxy Methods ===
     
     public Map<String, Object> getPowerStatus() {
-        log.info("Fetching power status");
+        log.debug("Fetching power status");
         return restClient.get()
                 .uri("/api/power")
                 .retrieve()
@@ -81,7 +81,7 @@ public class PowerClient {
     }
     
     public Map<String, Object> getGridStatus() {
-        log.info("Fetching grid status");
+        log.debug("Fetching grid status");
         return restClient.get()
                 .uri("/api/power/grid")
                 .retrieve()
@@ -89,7 +89,7 @@ public class PowerClient {
     }
     
     public List<Map<String, Object>> getAllSources() {
-        log.info("Fetching all power sources");
+        log.debug("Fetching all power sources");
         return restClient.get()
                 .uri("/api/power/sources")
                 .retrieve()
@@ -97,7 +97,7 @@ public class PowerClient {
     }
     
     public Map<String, Object> getSourceById(Long id) {
-        log.info("Fetching power source: {}", id);
+        log.debug("Fetching power source: {}", id);
         return restClient.get()
                 .uri("/api/power/sources/{id}", id)
                 .retrieve()
@@ -125,7 +125,7 @@ public class PowerClient {
     }
     
     public List<Map<String, Object>> getAllAllocations() {
-        log.info("Fetching all power allocations");
+        log.debug("Fetching all power allocations");
         return restClient.get()
                 .uri("/api/power/allocations")
                 .retrieve()
@@ -133,7 +133,7 @@ public class PowerClient {
     }
     
     public Map<String, Object> getAllocationBySystem(String system) {
-        log.info("Fetching power allocation for system: {}", system);
+        log.debug("Fetching power allocation for system: {}", system);
         return restClient.get()
                 .uri("/api/power/allocation/{system}", system)
                 .retrieve()

@@ -13,7 +13,7 @@
     
     <groupId>com.nexus</groupId>
     <artifactId>life-support-service</artifactId>
-    <version>0.1.0</version>
+    <version>0.0.0-dev</version>
     <name>life-support-service</name>
     <description>NEXUS Station Life Support Service</description>
     
