@@ -10,6 +10,8 @@ import java.util.Optional;
 @Repository
 public interface DockingBayRepository extends JpaRepository<DockingBay, Long> {
     
+    List<DockingBay> findAllByOrderByBayNumberAsc();
+    
     List<DockingBay> findByStatus(DockingBay.BayStatus status);
     
     Optional<DockingBay> findByBayNumber(Integer bayNumber);

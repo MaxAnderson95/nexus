@@ -50,8 +50,7 @@ management:
 # Logging
 logging:
   level:
-    com.nexus: DEBUG
-    org.springframework.web: INFO
+    root: ${LOG_LEVEL:INFO}
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 

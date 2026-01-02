@@ -15,30 +15,47 @@ NEXUS Station simulates operations management for a space station, including:
 ## Architecture
 
 ```
-                    ┌─────────────────────────────────────────┐
-                    │              CORTEX (BFF)               │
-                    │         React SPA + API Gateway         │
-                    │              Port 8080                  │
-                    └─────────────┬───────────────────────────┘
-                                  │
-        ┌─────────────┬───────────┼───────────┬───────────────┐
-        ▼             ▼           ▼           ▼               ▼
-   ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌───────────┐
-   │ Docking │  │  Crew   │  │  Life   │  │  Power  │  │ Inventory │
-   │  :8081  │  │  :8082  │  │ Support │  │  :8084  │  │   :8085   │
-   │         │  │         │  │  :8083  │  │         │  │           │
-   └────┬────┘  └────┬────┘  └────┬────┘  └─────────┘  └─────┬─────┘
-        │            │            │                          │
-        │            └─────►──────┘                          │
-        │                                                    │
-        └─────────────────────►──────────────────────────────┘
-
-   Service Dependencies:
-   - Life Support → Power (power allocation for environmental systems)
-   - Crew → Life Support (capacity adjustments when crew moves)
-   - Docking → Power, Crew (bay power, crew notifications)
-   - Inventory → Docking, Crew (manifest linking, cargo handling)
+                      ┌───────────────────────────────────────┐
+                      │             CORTEX (BFF)              │
+                      │       React SPA + API Gateway         │
+                      │             Port 8080                 │
+                      └───────────────────┬───────────────────┘
+                                          │
+        ┌─────────────┬───────────────────┼───────────────────┬─────────────┐
+        ▼             ▼                   ▼                   ▼             ▼
+   ┌─────────┐   ┌─────────┐        ┌───────────┐        ┌─────────┐   ┌───────────┐
+   │ Docking │   │  Crew   │        │   Life    │        │  Power  │   │ Inventory │
+   │  :8081  │   │  :8082  │        │  Support  │        │  :8084  │   │   :8085   │
+   └────┬────┘   └────┬────┘        │   :8083   │        └────△────┘   └─────┬─────┘
+        │             │             └─────┬─────┘             │              │
+        │             │                   │                   │              │
+        │             │                   └───────────────────┘              │
+        │             │                                                      │
+        └──────┬──────┴──────────────────────────────────────────────────────┘
+               │
+               ▼
+   ┌────────────────────────────────────────────────────────────────────────────┐
+   │                         Service Dependencies                              │
+   │                                                                            │
+   │   Power ◄─── Life Support ◄─── Crew                                       │
+   │     △                                                                      │
+   │     │                                                                      │
+   │     └─────── Docking ────────────────► Crew                                │
+   │                 △                                                          │
+   │                 │                                                          │
+   │                 └─────── Inventory ──────────► Crew                        │
+   └────────────────────────────────────────────────────────────────────────────┘
 ```
+
+### Service Dependencies
+
+| Service | Depends On | Purpose |
+|---------|------------|---------|
+| Power | - | Base service (no dependencies) |
+| Life Support | Power | Power allocation for environmental systems |
+| Crew | Life Support | Section capacity adjustments when crew relocates |
+| Docking | Power, Crew | Bay power allocation, crew notifications |
+| Inventory | Docking, Crew | Cargo manifest linking, crew for cargo handling |
 
 ### Tech Stack
 

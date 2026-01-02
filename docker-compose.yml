@@ -11,6 +11,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexus}
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     networks:
@@ -42,6 +43,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
       OTEL_SDK_DISABLED: "true"
       CHAOS: ${CORTEX_CHAOS:-${CHAOS_DEFAULT:-none}}
       SERVICES_DOCKING_URL: http://docking-service:8081
@@ -65,6 +67,7 @@ services:
   power-service:
     build: ./services/power-service
     environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
       OTEL_SDK_DISABLED: "true"
       CHAOS: ${POWER_CHAOS:-${CHAOS_DEFAULT:-none}}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus}
@@ -89,6 +92,7 @@ services:
   life-support-service:
     build: ./services/life-support-service
     environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
       OTEL_SDK_DISABLED: "true"
       CHAOS: ${LIFE_SUPPORT_CHAOS:-${CHAOS_DEFAULT:-none}}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus}
@@ -114,6 +118,7 @@ services:
   crew-service:
     build: ./services/crew-service
     environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
       OTEL_SDK_DISABLED: "true"
       CHAOS: ${CREW_CHAOS:-${CHAOS_DEFAULT:-none}}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus}
@@ -139,6 +144,7 @@ services:
   docking-service:
     build: ./services/docking-service
     environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
       OTEL_SDK_DISABLED: "true"
       CHAOS: ${DOCKING_CHAOS:-${CHAOS_DEFAULT:-none}}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus}
@@ -165,6 +171,7 @@ services:
   inventory-service:
     build: ./services/inventory-service
     environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
       OTEL_SDK_DISABLED: "true"
       CHAOS: ${INVENTORY_CHAOS:-${CHAOS_DEFAULT:-none}}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus}
@@ -208,3 +215,6 @@ services:
 networks:
   nexus:
     driver: bridge
+
+volumes:
+  postgres_data:

@@ -149,33 +149,33 @@ function Power() {
       {/* Main Grid Visualization */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
          {/* Status & Load */}
-         <Card className="lg:col-span-2 relative overflow-hidden" title="Grid Load Distribution">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-               <Zap className="w-32 h-32" />
-            </div>
+          <Card className="lg:col-span-2 relative overflow-hidden" title="Grid Load Distribution">
+             <div className="absolute bottom-0 right-0 p-4 opacity-5 pointer-events-none">
+                <Zap className="w-24 h-24" />
+             </div>
             
             <div className="flex flex-col gap-6 relative z-10">
                <div>
-                  <div className="flex justify-between items-end mb-2">
-                     <span className="text-sm text-cyan-500/70 font-mono uppercase tracking-widest">Total Utilization</span>
-                     <span className={`text-2xl font-mono font-bold ${
-                        grid.utilizationPercent > 90 ? 'text-red-400 animate-pulse' : 
-                        grid.utilizationPercent > 75 ? 'text-yellow-400' : 'text-cyan-400'
-                     }`}>
-                        {grid.utilizationPercent.toFixed(1)}%
-                     </span>
-                  </div>
-                  <div className="w-full h-4 bg-space-950 rounded-full overflow-hidden border border-space-800 shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)]">
-                     <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${Math.min(grid.utilizationPercent, 100)}%` }}
-                        transition={{ duration: 1.5, ease: "easeOut" }}
-                        className={`h-full relative overflow-hidden ${
-                           grid.utilizationPercent > 90 ? 'bg-gradient-to-r from-red-600 to-red-400' :
-                           grid.utilizationPercent > 75 ? 'bg-gradient-to-r from-yellow-600 to-yellow-400' :
-                           'bg-gradient-to-r from-cyan-600 to-cyan-400'
-                        }`}
-                     >
+                   <div className="flex justify-between items-end mb-2">
+                      <span className="text-sm text-cyan-500/70 font-mono uppercase tracking-widest">Total Utilization</span>
+                      <span className={`text-2xl font-mono font-bold ${
+                         grid.utilizationPercent > 90 ? 'text-amber-400' : 
+                         grid.utilizationPercent > 75 ? 'text-yellow-400' : 'text-cyan-400'
+                      }`}>
+                         {grid.utilizationPercent.toFixed(1)}%
+                      </span>
+                   </div>
+                   <div className="w-full h-4 bg-space-950 rounded-full overflow-hidden border border-space-800 shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)]">
+                      <motion.div 
+                         initial={{ width: 0 }}
+                         animate={{ width: `${Math.min(grid.utilizationPercent, 100)}%` }}
+                         transition={{ duration: 1.5, ease: "easeOut" }}
+                         className={`h-full relative overflow-hidden ${
+                            grid.utilizationPercent > 90 ? 'bg-gradient-to-r from-amber-600 to-amber-400' :
+                            grid.utilizationPercent > 75 ? 'bg-gradient-to-r from-yellow-600 to-yellow-400' :
+                            'bg-gradient-to-r from-cyan-600 to-cyan-400'
+                         }`}
+                      >
                         <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.1)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.1)_50%,rgba(255,255,255,0.1)_75%,transparent_75%,transparent)] bg-[length:1rem_1rem] animate-[progress-bar-stripes_1s_linear_infinite]" />
                      </motion.div>
                   </div>
@@ -215,7 +215,7 @@ function Power() {
                            {source.type === 'FUEL_CELL' && <Cpu className="w-3 h-3 text-orange-400" />}
                            {source.name}
                         </div>
-                        <div className={`w-2 h-2 rounded-full ${source.status === 'ONLINE' ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-red-500'}`} />
+                         <div className={`w-2 h-2 rounded-full ${source.status === 'ONLINE' ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : source.status === 'STANDBY' ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-slate-500'}`} />
                      </div>
                      <div className="space-y-1">
                         <div className="flex justify-between text-[10px] text-cyan-500/50 uppercase">
@@ -249,13 +249,13 @@ function Power() {
                   >
                      <div className="flex justify-between items-start mb-3">
                         <div className="font-bold text-white tracking-wide">{alloc.systemName}</div>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono border ${
-                           alloc.priority <= 2 ? 'text-red-400 border-red-500/30 bg-red-500/10' :
-                           alloc.priority <= 4 ? 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10' :
-                           'text-cyan-400 border-cyan-500/30 bg-cyan-500/10'
-                        }`}>
-                           PRIORITY {alloc.priority}
-                        </span>
+                         <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono border ${
+                            alloc.priority <= 2 ? 'text-purple-400 border-purple-500/30 bg-purple-500/10' :
+                            alloc.priority <= 4 ? 'text-amber-400 border-amber-500/30 bg-amber-500/10' :
+                            'text-cyan-400 border-cyan-500/30 bg-cyan-500/10'
+                         }`}>
+                            PRIORITY {alloc.priority}
+                         </span>
                      </div>
                      
                      <div className="flex items-center gap-2 mb-4">
@@ -264,18 +264,18 @@ function Power() {
                         <span className="text-xs text-cyan-500/50 mt-2">kW</span>
                      </div>
 
-                     <button
-                        onClick={() => handleDeallocate(alloc.systemName)}
-                        disabled={deallocatingSystem === alloc.systemName}
-                        className="w-full py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded text-xs font-mono uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
-                     >
-                        {deallocatingSystem === alloc.systemName ? (
-                           <div className="w-3 h-3 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
-                        ) : (
-                           <Trash2 className="w-3 h-3" />
-                        )}
-                        Deallocate
-                     </button>
+                      <button
+                         onClick={() => handleDeallocate(alloc.systemName)}
+                         disabled={deallocatingSystem === alloc.systemName}
+                         className="w-full py-2 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/20 rounded text-xs font-mono uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+                      >
+                         {deallocatingSystem === alloc.systemName ? (
+                            <div className="w-3 h-3 border-2 border-slate-400/30 border-t-slate-400 rounded-full animate-spin" />
+                         ) : (
+                            <Trash2 className="w-3 h-3" />
+                         )}
+                         Deallocate
+                      </button>
                      
                      {/* Always visible on mobile, hidden on desktop until hover */}
                      <div className="md:hidden mt-2">
@@ -358,35 +358,35 @@ function Power() {
                         </div>
                      </div>
 
-                     <div className="space-y-2">
-                        <div className="flex justify-between text-xs text-cyan-500/70 font-mono uppercase">
-                           <span>Priority Level</span>
-                           <span className={`font-bold ${
-                              allocPriority <= 2 ? 'text-red-400' :
-                              allocPriority <= 4 ? 'text-yellow-400' : 'text-cyan-400'
-                           }`}>LEVEL {allocPriority}</span>
-                        </div>
-                        <div className="flex gap-1">
-                           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((p) => (
-                              <button
-                                 key={p}
-                                 onClick={() => setAllocPriority(p)}
-                                 className={`flex-1 h-8 rounded text-xs font-mono transition-all ${
-                                    allocPriority === p
-                                       ? p <= 2 ? 'bg-red-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.5)]' :
-                                         p <= 4 ? 'bg-yellow-500 text-white shadow-[0_0_10px_rgba(234,179,8,0.5)]' : 
-                                         'bg-cyan-500 text-white shadow-[0_0_10px_rgba(6,182,212,0.5)]'
-                                       : 'bg-space-800 text-cyan-500/30 hover:bg-space-700'
-                                 }`}
-                              >
-                                 {p}
-                              </button>
-                           ))}
-                        </div>
-                        <div className="text-[10px] text-cyan-500/30 font-mono uppercase text-center mt-1">
-                           1 = Critical • 10 = Low Priority
-                        </div>
-                     </div>
+                      <div className="space-y-2">
+                         <div className="flex justify-between text-xs text-cyan-500/70 font-mono uppercase">
+                            <span>Priority Level</span>
+                            <span className={`font-bold ${
+                               allocPriority <= 2 ? 'text-purple-400' :
+                               allocPriority <= 4 ? 'text-amber-400' : 'text-cyan-400'
+                            }`}>LEVEL {allocPriority}</span>
+                         </div>
+                         <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((p) => (
+                               <button
+                                  key={p}
+                                  onClick={() => setAllocPriority(p)}
+                                  className={`flex-1 h-8 rounded text-xs font-mono transition-all ${
+                                     allocPriority === p
+                                        ? p <= 2 ? 'bg-purple-500 text-white shadow-[0_0_10px_rgba(168,85,247,0.5)]' :
+                                          p <= 4 ? 'bg-amber-500 text-white shadow-[0_0_10px_rgba(245,158,11,0.5)]' : 
+                                          'bg-cyan-500 text-white shadow-[0_0_10px_rgba(6,182,212,0.5)]'
+                                        : 'bg-space-800 text-cyan-500/30 hover:bg-space-700'
+                                  }`}
+                               >
+                                  {p}
+                               </button>
+                            ))}
+                         </div>
+                         <div className="text-[10px] text-cyan-500/30 font-mono uppercase text-center mt-1">
+                            1 = Critical • 10 = Low Priority
+                         </div>
+                      </div>
 
                      {grid && allocAmount > grid.availableKw && (
                         <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded text-yellow-400 text-xs flex items-center gap-2">

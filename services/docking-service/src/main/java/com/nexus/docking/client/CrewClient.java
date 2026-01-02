@@ -23,21 +23,21 @@ public class CrewClient {
                 .build();
     }
     
-    public ArrivalResponse registerArrival(String shipName, Integer crewCount) {
-        log.info("Registering crew arrival: {} crew members from ship '{}'", crewCount, shipName);
+    public ArrivalResponse registerArrival(Long shipId, String shipName, Integer crewCount) {
+        log.info("Registering crew arrival: {} crew members from ship '{}' (ID: {})", crewCount, shipName, shipId);
         
         try {
-            var response = restClient.post()
-                    .uri("/api/crew/register-arrival")
+            restClient.post()
+                    .uri("/api/crew/arrival")
                     .body(Map.of(
-                            "shipName", shipName,
+                            "shipId", shipId,
                             "crewCount", crewCount
                     ))
                     .retrieve()
-                    .body(ArrivalResponse.class);
+                    .toBodilessEntity();
             
-            log.info("Crew arrival registration successful for ship '{}': {}", shipName, response);
-            return response;
+            log.info("Crew arrival registration successful for ship '{}'", shipName);
+            return new ArrivalResponse(true, "Crew registered successfully", crewCount);
         } catch (Exception e) {
             log.error("Failed to register crew arrival for ship '{}': {}", shipName, e.getMessage());
             // Don't throw - crew registration failure shouldn't block docking
@@ -46,20 +46,8 @@ public class CrewClient {
     }
     
     public void registerDeparture(String shipName) {
-        log.info("Registering crew departure for ship: {}", shipName);
-        
-        try {
-            restClient.post()
-                    .uri("/api/crew/register-departure")
-                    .body(Map.of("shipName", shipName))
-                    .retrieve()
-                    .toBodilessEntity();
-            
-            log.info("Crew departure registration successful for ship: {}", shipName);
-        } catch (Exception e) {
-            log.error("Failed to register crew departure for ship '{}': {}", shipName, e.getMessage());
-            // Don't throw - departure registration failure shouldn't block undocking
-        }
+        // Crew departure is tracked implicitly - no dedicated endpoint needed for demo
+        log.info("Crew departure noted for ship: {}", shipName);
     }
     
     public record ArrivalResponse(

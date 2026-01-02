@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Anchor, 
@@ -9,7 +9,8 @@ import {
   Menu,
   X,
   Activity,
-  Cpu
+  Cpu,
+  Settings
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,6 +26,7 @@ const navItems = [
   { path: '/life-support', label: 'Life Support', icon: ThermometerSun },
   { path: '/power', label: 'Power Grid', icon: Zap },
   { path: '/inventory', label: 'Cargo', icon: Package },
+  { path: '/admin', label: 'Admin', icon: Settings },
 ];
 
 function Layout({ children }: LayoutProps) {
@@ -49,14 +51,15 @@ function Layout({ children }: LayoutProps) {
         <div className="h-full max-w-[1920px] mx-auto px-4 md:px-6 flex items-center justify-between">
           
           {/* Brand / Logo Area */}
-          <div className="flex items-center space-x-4 group">
+          <Link to="/" className="flex items-center space-x-4 group cursor-pointer">
             <div className="relative w-10 h-10 flex items-center justify-center">
               <div className="absolute inset-0 border-2 border-cyan-500/30 rounded-full animate-spin-slow" />
               <div className="absolute inset-1 border border-cyan-400/50 rounded-full" />
-              <Cpu className="w-5 h-5 text-cyan-400 drop-shadow-[0_0_5px_rgba(34,211,238,0.8)]" />
+              <div className="absolute inset-0 bg-cyan-400/0 group-hover:bg-cyan-400/10 rounded-full transition-colors duration-300" />
+              <Cpu className="w-5 h-5 text-cyan-400 drop-shadow-[0_0_5px_rgba(34,211,238,0.8)] group-hover:drop-shadow-[0_0_8px_rgba(34,211,238,1)] transition-all" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-cyan-600 uppercase font-sans">
+              <h1 className="text-2xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-cyan-600 uppercase font-sans group-hover:brightness-110 transition-all">
                 Nexus<span className="font-light text-cyan-400/70">OS</span>
               </h1>
               <div className="flex items-center space-x-2 text-[10px] text-cyan-500/60 font-mono tracking-widest uppercase">
@@ -65,7 +68,7 @@ function Layout({ children }: LayoutProps) {
                 <span>Sys.Online</span>
               </div>
             </div>
-          </div>
+          </Link>
 
           {/* Center Status Ticker (Hidden on Mobile) */}
           <div className="hidden md:flex items-center space-x-8 text-xs font-mono text-cyan-500/60">

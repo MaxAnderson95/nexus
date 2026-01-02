@@ -25,9 +25,9 @@ function Docking() {
     loadData();
   }, []);
 
-  async function loadData() {
+  async function loadData(init = true) {
     try {
-      setLoading(true);
+      if (init) setLoading(true);
       setError(null);
       const [baysData, shipsData] = await Promise.all([
         api.docking.getBays(),
@@ -38,7 +38,7 @@ function Docking() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load docking data');
     } finally {
-      setLoading(false);
+      if (init) setLoading(false);
     }
   }
 
@@ -46,7 +46,7 @@ function Docking() {
     try {
       setActionLoading(shipId);
       await api.docking.dockShip(shipId);
-      await loadData();
+      await loadData(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to dock ship');
     } finally {
@@ -58,7 +58,7 @@ function Docking() {
     try {
       setActionLoading(shipId);
       await api.docking.undockShip(shipId);
-      await loadData();
+      await loadData(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to undock ship');
     } finally {
@@ -92,7 +92,7 @@ function Docking() {
               TRAFFIC: {ships.filter(s => s.status === 'INCOMING').length} INBOUND
             </div>
             <button
-               onClick={loadData}
+               onClick={() => loadData()}
                className="p-2 text-cyan-500/50 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-full transition-all"
                title="Refresh Data"
             >

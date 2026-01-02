@@ -6,6 +6,7 @@ import Crew from './pages/Crew'
 import LifeSupport from './pages/LifeSupport'
 import Power from './pages/Power'
 import Inventory from './pages/Inventory'
+import Admin from './pages/Admin'
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/life-support" element={<LifeSupport />} />
         <Route path="/power" element={<Power />} />
         <Route path="/inventory" element={<Inventory />} />
+        <Route path="/admin" element={<Admin />} />
       </Routes>
     </Layout>
   )

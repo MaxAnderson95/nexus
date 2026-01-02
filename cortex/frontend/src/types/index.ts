@@ -167,7 +167,7 @@ export interface PowerSourceSummary {
   id: number;
   name: string;
   type: 'SOLAR_ARRAY' | 'FUSION_REACTOR' | 'BATTERY_BANK' | 'FUEL_CELL';
-  status: 'ONLINE' | 'OFFLINE' | 'MAINTENANCE' | 'DEGRADED';
+  status: 'ONLINE' | 'OFFLINE' | 'STANDBY' | 'MAINTENANCE' | 'DEGRADED';
   maxOutputKw: number;
   currentOutputKw: number;
   utilizationPercent: number;
@@ -216,4 +216,17 @@ export interface ResupplyRequest {
   quantity: number;
   status: 'PENDING' | 'APPROVED' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED';
   requestedAt: string;
+}
+
+// Admin
+export interface ServiceResetResult {
+  service: string;
+  status: 'success' | 'error';
+  message: string;
+}
+
+export interface ResetAllTablesResponse {
+  status: 'success' | 'partial';
+  message: string;
+  results: ServiceResetResult[];
 }

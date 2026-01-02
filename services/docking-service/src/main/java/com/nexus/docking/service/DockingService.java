@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,7 @@ public class DockingService {
     
     private static final String REDIS_BAYS_AVAILABLE = "docking:bays:available";
     private static final String REDIS_SHIPS_INCOMING = "docking:ships:incoming";
+    private static final Duration DEPARTURE_DURATION = Duration.ofSeconds(15);
     private static final double POWER_PER_BAY_KW = 50.0;
     
     private final DockingBayRepository bayRepository;
@@ -65,17 +67,27 @@ public class DockingService {
         if (customSpansEnabled) {
             Span span = tracer.spanBuilder("docking.getAllBays").startSpan();
             try (Scope scope = span.makeCurrent()) {
-                List<DockingBayDto> bays = bayRepository.findAll().stream()
-                        .map(DockingBayDto::fromEntity)
-                        .toList();
+                List<DockingBayDto> bays = getBaysWithShipNames();
                 span.setAttribute("docking.bay_count", bays.size());
                 return bays;
             } finally {
                 span.end();
             }
         }
-        return bayRepository.findAll().stream()
-                .map(DockingBayDto::fromEntity)
+        return getBaysWithShipNames();
+    }
+    
+    private List<DockingBayDto> getBaysWithShipNames() {
+        return bayRepository.findAllByOrderByBayNumberAsc().stream()
+                .map(bay -> {
+                    String shipName = null;
+                    if (bay.getCurrentShipId() != null) {
+                        shipName = shipRepository.findById(bay.getCurrentShipId())
+                                .map(Ship::getName)
+                                .orElse(null);
+                    }
+                    return DockingBayDto.fromEntity(bay, shipName);
+                })
                 .toList();
     }
     
@@ -185,7 +197,7 @@ public class DockingService {
         
         // Register crew arrival if ship has crew (distributed call)
         if (ship.getCrewCount() > 0) {
-            crewClient.registerArrival(ship.getName(), ship.getCrewCount());
+            crewClient.registerArrival(ship.getId(), ship.getName(), ship.getCrewCount());
         }
         
         // Update Redis cache
@@ -250,6 +262,7 @@ public class DockingService {
         
         // Update ship status
         ship.setStatus(Ship.ShipStatus.DEPARTING);
+        ship.setDepartureTime(Instant.now());
         shipRepository.save(ship);
         
         // Log the undocking action
@@ -327,6 +340,28 @@ public class DockingService {
                     String.valueOf(availableBays), Duration.ofMinutes(1));
         } catch (Exception e) {
             log.warn("Failed to update Redis cache: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * Scheduled task that transitions ships from DEPARTING back to INCOMING
+     * after they have been departing for the configured duration (15 seconds).
+     * This simulates ships completing their departure and returning for another visit.
+     */
+    @Scheduled(fixedRate = 5000) // Check every 5 seconds
+    @Transactional
+    public void transitionDepartingShips() {
+        List<Ship> departingShips = shipRepository.findByStatus(Ship.ShipStatus.DEPARTING);
+        Instant threshold = Instant.now().minus(DEPARTURE_DURATION);
+        
+        for (Ship ship : departingShips) {
+            if (ship.getDepartureTime() != null && ship.getDepartureTime().isBefore(threshold)) {
+                log.info("Ship '{}' has completed departure, transitioning to INCOMING", ship.getName());
+                ship.setStatus(Ship.ShipStatus.INCOMING);
+                ship.setDepartureTime(null);
+                ship.setArrivalTime(Instant.now());
+                shipRepository.save(ship);
+            }
         }
     }
     

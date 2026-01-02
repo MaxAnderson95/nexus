@@ -13,6 +13,7 @@ import type {
   Supply,
   CargoManifest,
   ResupplyRequest,
+  ResetAllTablesResponse,
 } from '../types';
 
 const BASE_URL = '/api';
@@ -126,6 +127,12 @@ export const api = {
     getManifests: () => request<CargoManifest[]>('/inventory/cargo-manifests'),
     unloadManifest: (manifestId: number) =>
       request<{ message: string }>(`/inventory/cargo-manifests/${manifestId}/unload`, { method: 'POST' }),
+  },
+
+  // Admin
+  admin: {
+    resetAllTables: () =>
+      request<ResetAllTablesResponse>('/admin/resetAllTables', { method: 'POST' }),
   },
 };
 
