@@ -50,6 +50,8 @@ spec:
               value: "crew-service"
             {{- include "nexus-station.commonEnv" . | nindent 12 }}
             {{- include "nexus-station.otelEnv" . | nindent 12 }}
+            - name: SERVICES_LIFE_SUPPORT_URL
+              value: "http://{{ include "nexus-station.fullname" . }}-life-support-service:{{ .Values.lifeSupportService.service.port }}"
             {{- with .Values.crewService.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
