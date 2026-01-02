@@ -50,6 +50,10 @@ spec:
               value: "inventory-service"
             {{- include "nexus-station.commonEnv" . | nindent 12 }}
             {{- include "nexus-station.otelEnv" . | nindent 12 }}
+            - name: SERVICES_DOCKING_URL
+              value: "http://{{ include "nexus-station.fullname" . }}-docking-service:{{ .Values.dockingService.service.port }}"
+            - name: SERVICES_CREW_URL
+              value: "http://{{ include "nexus-station.fullname" . }}-crew-service:{{ .Values.crewService.service.port }}"
             {{- with .Values.inventoryService.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

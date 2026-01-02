@@ -50,15 +50,15 @@ spec:
               value: "cortex"
             {{- include "nexus-station.commonEnv" . | nindent 12 }}
             {{- include "nexus-station.otelEnv" . | nindent 12 }}
-            - name: DOCKING_SERVICE_URL
+            - name: SERVICES_DOCKING_URL
               value: "http://{{ include "nexus-station.fullname" . }}-docking-service:{{ .Values.dockingService.service.port }}"
-            - name: CREW_SERVICE_URL
+            - name: SERVICES_CREW_URL
               value: "http://{{ include "nexus-station.fullname" . }}-crew-service:{{ .Values.crewService.service.port }}"
-            - name: LIFE_SUPPORT_SERVICE_URL
+            - name: SERVICES_LIFE_SUPPORT_URL
               value: "http://{{ include "nexus-station.fullname" . }}-life-support-service:{{ .Values.lifeSupportService.service.port }}"
-            - name: POWER_SERVICE_URL
+            - name: SERVICES_POWER_URL
               value: "http://{{ include "nexus-station.fullname" . }}-power-service:{{ .Values.powerService.service.port }}"
-            - name: INVENTORY_SERVICE_URL
+            - name: SERVICES_INVENTORY_URL
               value: "http://{{ include "nexus-station.fullname" . }}-inventory-service:{{ .Values.inventoryService.service.port }}"
             {{- with .Values.cortex.env }}
             {{- toYaml . | nindent 12 }}
