@@ -143,7 +143,7 @@ public class CrewClient {
     public Map<String, Object> getSectionHeadcount(Long id) {
         log.debug("Fetching section headcount: {}", id);
         return restClient.get()
-                .uri("/api/crew/sections/{id}/headcount", id)
+                .uri("/api/v1/crew/sections/{id}/headcount", id)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
