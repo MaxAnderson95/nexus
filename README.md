@@ -40,7 +40,7 @@ flowchart TB
     end
 
     subgraph BFF
-        CORTEX[CORTEX<br/>:8080]
+        CORTEX[CORTEX]
     end
 
     subgraph Backend Services
@@ -52,9 +52,8 @@ flowchart TB
     end
 
     subgraph Infrastructure
-        PG[(PostgreSQL<br/>:5432)]
-        REDIS[(Redis<br/>:6379)]
-        OTEL[OpenTelemetry<br/>Collector]
+        PG[(PostgreSQL)]
+        REDIS[(Redis)]
     end
 
     UI --> CORTEX
@@ -65,31 +64,15 @@ flowchart TB
     CORTEX --> LIFE
     CORTEX --> INVENTORY
 
-    LIFE -->|power allocation<br/>priority: 1| POWER
-    DOCKING -->|power allocation<br/>priority: 4| POWER
-    DOCKING -->|crew arrivals| CREW
-    CREW -->|capacity updates| LIFE
-    INVENTORY -->|schedule delivery| DOCKING
-    INVENTORY -->|available crew| CREW
+    LIFE --> POWER
+    DOCKING --> POWER
+    DOCKING --> CREW
+    CREW --> LIFE
+    INVENTORY --> DOCKING
+    INVENTORY --> CREW
 
-    POWER --> PG
-    DOCKING --> PG
-    CREW --> PG
-    LIFE --> PG
-    INVENTORY --> PG
-
-    POWER --> REDIS
-    DOCKING --> REDIS
-    CREW --> REDIS
-    LIFE --> REDIS
-    INVENTORY --> REDIS
-
-    CORTEX -.-> OTEL
-    POWER -.-> OTEL
-    DOCKING -.-> OTEL
-    CREW -.-> OTEL
-    LIFE -.-> OTEL
-    INVENTORY -.-> OTEL
+    POWER & DOCKING & CREW & LIFE & INVENTORY --> PG
+    POWER & DOCKING & CREW & LIFE & INVENTORY --> REDIS
 ```
 
 ### Dependency Matrix
