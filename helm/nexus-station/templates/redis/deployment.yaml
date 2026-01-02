@@ -4,25 +4,26 @@ kind: Deployment
 metadata:
   name: {{ include "nexus-station.fullname" . }}-redis
   labels:
-    {{- include "nexus-station.componentLabels" (dict "root" . "component" "redis") | nindent 4 }}
+    {{- include "nexus-station.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
 spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "nexus-station.componentSelectorLabels" (dict "root" . "component" "redis") | nindent 6 }}
+      {{- include "nexus-station.selectorLabels" (dict "context" . "component" "redis") | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "nexus-station.componentSelectorLabels" (dict "root" . "component" "redis") | nindent 8 }}
+        {{- include "nexus-station.selectorLabels" (dict "context" . "component" "redis") | nindent 8 }}
     spec:
       {{- include "nexus-station.imagePullSecrets" . | nindent 6 }}
       containers:
         - name: redis
-          image: {{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}
+          image: {{ include "nexus-station.image" (dict "context" . "image" .Values.redis.image) | quote }}
           imagePullPolicy: {{ .Values.redis.image.pullPolicy }}
           ports:
             - name: redis
-              containerPort: {{ .Values.redis.service.port }}
+              containerPort: 6379
               protocol: TCP
           livenessProbe:
             exec:
@@ -31,6 +32,8 @@ spec:
                 - ping
             initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
           readinessProbe:
             exec:
               command:
@@ -38,6 +41,11 @@ spec:
                 - ping
             initialDelaySeconds: 5
             periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          {{- with .Values.redis.resources }}
           resources:
-            {{- toYaml .Values.redis.resources | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
 {{- end }}

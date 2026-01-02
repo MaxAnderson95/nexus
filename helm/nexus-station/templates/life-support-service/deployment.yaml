@@ -1,73 +1,60 @@
+{{- if .Values.lifeSupportService.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "nexus-station.fullname" . }}-life-support-service
   labels:
-    {{- include "nexus-station.componentLabels" (dict "root" . "component" "life-support-service") | nindent 4 }}
+    {{- include "nexus-station.labels" . | nindent 4 }}
+    app.kubernetes.io/component: life-support-service
 spec:
   replicas: {{ .Values.lifeSupportService.replicaCount }}
+  revisionHistoryLimit: {{ .Values.lifeSupportService.revisionHistoryLimit }}
+  strategy:
+    {{- toYaml .Values.lifeSupportService.strategy | nindent 4 }}
   selector:
     matchLabels:
-      {{- include "nexus-station.componentSelectorLabels" (dict "root" . "component" "life-support-service") | nindent 6 }}
+      {{- include "nexus-station.selectorLabels" (dict "context" . "component" "life-support-service") | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "nexus-station.componentSelectorLabels" (dict "root" . "component" "life-support-service") | nindent 8 }}
+        {{- include "nexus-station.selectorLabels" (dict "context" . "component" "life-support-service") | nindent 8 }}
+        {{- with .Values.lifeSupportService.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.lifeSupportService.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       {{- include "nexus-station.imagePullSecrets" . | nindent 6 }}
       containers:
         - name: life-support-service
-          image: {{ include "nexus-station.image" (dict "root" . "image" .Values.lifeSupportService.image) }}
+          image: {{ include "nexus-station.image" (dict "context" . "image" .Values.lifeSupportService.image) | quote }}
           imagePullPolicy: {{ .Values.lifeSupportService.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: {{ .Values.lifeSupportService.service.port }}
+              containerPort: {{ .Values.lifeSupportService.service.containerPort }}
               protocol: TCP
+          {{- with .Values.lifeSupportService.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.lifeSupportService.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           env:
-            - name: SERVER_PORT
-              value: {{ .Values.lifeSupportService.service.port | quote }}
-            - name: SPRING_DATASOURCE_URL
-              value: {{ include "nexus-station.postgresUrl" . | quote }}
-            - name: SPRING_DATASOURCE_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "nexus-station.fullname" . }}-secrets
-                  key: POSTGRES_USER
-            - name: SPRING_DATASOURCE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "nexus-station.fullname" . }}-secrets
-                  key: POSTGRES_PASSWORD
-            - name: POWER_SERVICE_URL
-              value: "http://{{ include "nexus-station.fullname" . }}-power-service:{{ .Values.powerService.service.port }}"
-            # OpenTelemetry configuration
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: {{ .Values.global.otel.endpoint | quote }}
+            - name: SERVICE_NAME
+              value: "life-support-service"
             - name: OTEL_SERVICE_NAME
               value: "life-support-service"
-            - name: CUSTOM_TELEMETRY_ENABLED
-              value: {{ .Values.lifeSupportService.customTelemetry.enabled | quote }}
-            # Chaos configuration
-            - name: CHAOS_ENABLED
-              value: {{ .Values.lifeSupportService.chaos.enabled | quote }}
-            - name: CHAOS_LATENCY_MS
-              value: {{ .Values.lifeSupportService.chaos.latencyMs | quote }}
-            - name: CHAOS_ERROR_RATE
-              value: {{ .Values.lifeSupportService.chaos.errorRate | quote }}
-          envFrom:
-            - configMapRef:
-                name: {{ include "nexus-station.fullname" . }}-config
-          livenessProbe:
-            httpGet:
-              path: /actuator/health/liveness
-              port: http
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /actuator/health/readiness
-              port: http
-            initialDelaySeconds: 10
-            periodSeconds: 5
+            {{- include "nexus-station.commonEnv" . | nindent 12 }}
+            {{- include "nexus-station.otelEnv" . | nindent 12 }}
+            {{- with .Values.lifeSupportService.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.lifeSupportService.resources }}
           resources:
-            {{- toYaml .Values.lifeSupportService.resources | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

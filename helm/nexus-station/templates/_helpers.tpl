@@ -8,19 +8,9 @@ Expand the name of the chart.
 {{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
-If release name contains chart name it will be used as a full name.
 */}}
 {{- define "nexus-station.fullname" -}}
-{{- if .Values.fullnameOverride }}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- $name := default .Chart.Name .Values.nameOverride }}
-{{- if contains $name .Release.Name }}
-{{- .Release.Name | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
-{{- end }}
-{{- end }}
+{{- default .Release.Name .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -35,81 +25,108 @@ Common labels
 */}}
 {{- define "nexus-station.labels" -}}
 helm.sh/chart: {{ include "nexus-station.chart" . }}
-{{ include "nexus-station.selectorLabels" . }}
+app.kubernetes.io/name: {{ include "nexus-station.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/managed-by: {{ .Values.managedBy }}
 {{- end }}
 
 {{/*
-Selector labels
+Selector labels for a component
+Usage: {{ include "nexus-station.selectorLabels" (dict "context" . "component" "cortex") }}
 */}}
 {{- define "nexus-station.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "nexus-station.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end }}
-
-{{/*
-Create the name for a component
-*/}}
-{{- define "nexus-station.componentName" -}}
-{{- $fullname := include "nexus-station.fullname" .root -}}
-{{- printf "%s-%s" $fullname .component | trunc 63 | trimSuffix "-" -}}
-{{- end }}
-
-{{/*
-Component labels
-*/}}
-{{- define "nexus-station.componentLabels" -}}
-{{ include "nexus-station.labels" .root }}
+app.kubernetes.io/name: {{ include "nexus-station.name" .context }}
+app.kubernetes.io/instance: {{ .context.Release.Name }}
 app.kubernetes.io/component: {{ .component }}
 {{- end }}
 
 {{/*
-Component selector labels
+Generate the image path for a component.
+Usage: {{ include "nexus-station.image" (dict "context" . "image" .Values.cortex.image) }}
 */}}
-{{- define "nexus-station.componentSelectorLabels" -}}
-{{ include "nexus-station.selectorLabels" .root }}
-app.kubernetes.io/component: {{ .component }}
+{{- define "nexus-station.image" -}}
+{{- $registry := .image.registry | default "" -}}
+{{- $repository := .image.repository -}}
+{{- $tag := .image.tag | default "latest" -}}
+{{- if $registry -}}
+{{- printf "%s/%s:%s" $registry $repository $tag -}}
+{{- else -}}
+{{- printf "%s:%s" $repository $tag -}}
+{{- end -}}
 {{- end }}
 
 {{/*
-Create image pull secrets
+Generate image pull secrets
+Usage: {{ include "nexus-station.imagePullSecrets" . }}
 */}}
 {{- define "nexus-station.imagePullSecrets" -}}
-{{- if .Values.global.imagePullSecrets }}
+{{- if .Values.imagePullSecrets }}
 imagePullSecrets:
-{{- range .Values.global.imagePullSecrets }}
+{{- range .Values.imagePullSecrets }}
   - name: {{ . }}
 {{- end }}
 {{- end }}
 {{- end }}
 
 {{/*
-Create full image name
-*/}}
-{{- define "nexus-station.image" -}}
-{{- $registry := .root.Values.global.imageRegistry -}}
-{{- if $registry -}}
-{{- printf "%s/%s:%s" $registry .image.repository .image.tag -}}
-{{- else -}}
-{{- printf "%s:%s" .image.repository .image.tag -}}
-{{- end -}}
-{{- end }}
-
-{{/*
-PostgreSQL connection URL
+Generate PostgreSQL connection URL
 */}}
 {{- define "nexus-station.postgresUrl" -}}
-{{- $host := printf "%s-postgres" (include "nexus-station.fullname" .) -}}
-{{- printf "jdbc:postgresql://%s:%d/%s" $host (int .Values.postgresql.service.port) .Values.postgresql.auth.database -}}
+{{- printf "postgresql://%s:%s@%s-postgres:%d/%s" .Values.postgres.auth.username .Values.postgres.auth.password (include "nexus-station.fullname" .) (int .Values.postgres.service.port) .Values.postgres.auth.database -}}
 {{- end }}
 
 {{/*
-Redis connection URL
+Generate Redis connection URL
 */}}
 {{- define "nexus-station.redisUrl" -}}
-{{- $host := printf "%s-redis" (include "nexus-station.fullname" .) -}}
-{{- printf "redis://%s:%d" $host (int .Values.redis.service.port) -}}
+{{- printf "redis://%s-redis:%d" (include "nexus-station.fullname" .) (int .Values.redis.service.port) -}}
+{{- end }}
+
+{{/*
+Common environment variables for all services
+*/}}
+{{- define "nexus-station.commonEnv" -}}
+- name: POD_NAME
+  valueFrom:
+    fieldRef:
+      fieldPath: metadata.name
+- name: POD_NAMESPACE
+  valueFrom:
+    fieldRef:
+      fieldPath: metadata.namespace
+- name: POD_IP
+  valueFrom:
+    fieldRef:
+      fieldPath: status.podIP
+- name: NODE_NAME
+  valueFrom:
+    fieldRef:
+      fieldPath: spec.nodeName
+{{- if .Values.postgres.enabled }}
+- name: DATABASE_URL
+  value: {{ include "nexus-station.postgresUrl" . | quote }}
+{{- end }}
+{{- if .Values.redis.enabled }}
+- name: REDIS_URL
+  value: {{ include "nexus-station.redisUrl" . | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
+OpenTelemetry environment variables
+*/}}
+{{- define "nexus-station.otelEnv" -}}
+{{- if .Values.otel.enabled }}
+- name: OTEL_EXPORTER_OTLP_ENDPOINT
+  value: {{ .Values.otel.endpoint | quote }}
+- name: OTEL_EXPORTER_OTLP_PROTOCOL
+  value: {{ .Values.otel.protocol | quote }}
+{{- if .Values.otel.insecure }}
+- name: OTEL_EXPORTER_OTLP_INSECURE
+  value: "true"
+{{- end }}
+{{- end }}
 {{- end }}

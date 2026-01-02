@@ -4,14 +4,15 @@ kind: Service
 metadata:
   name: {{ include "nexus-station.fullname" . }}-redis
   labels:
-    {{- include "nexus-station.componentLabels" (dict "root" . "component" "redis") | nindent 4 }}
+    {{- include "nexus-station.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
 spec:
-  type: ClusterIP
+  type: {{ .Values.redis.service.type }}
   ports:
     - port: {{ .Values.redis.service.port }}
       targetPort: redis
       protocol: TCP
       name: redis
   selector:
-    {{- include "nexus-station.componentSelectorLabels" (dict "root" . "component" "redis") | nindent 4 }}
+    {{- include "nexus-station.selectorLabels" (dict "context" . "component" "redis") | nindent 4 }}
 {{- end }}

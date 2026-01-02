@@ -1,4 +1,0 @@
-{{/*
-PVC is managed by StatefulSet volumeClaimTemplates when persistence is enabled.
-This file is kept for reference and potential standalone PVC usage.
-*/}}
