@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
-import { api } from '../api/client';
+import { api, ApiError } from '../api/client';
 import type { EnvironmentStatus, Alert, SelfTestResult } from '../types';
 import { Card } from '../components/ui/Card';
-import { 
-  ThermometerSun, 
-  Wind, 
-  Droplets, 
-  Gauge, 
-  AlertOctagon, 
-  Activity, 
-  CheckCircle2, 
+import { ErrorAlert, type ErrorInfo } from '../components/ui/ErrorAlert';
+import {
+  ThermometerSun,
+  Wind,
+  Droplets,
+  Gauge,
+  AlertOctagon,
+  Activity,
+  CheckCircle2,
   XCircle,
   Settings,
   RefreshCw,
@@ -21,7 +22,7 @@ function LifeSupport() {
   const [environment, setEnvironment] = useState<EnvironmentStatus[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorInfo | null>(null);
   
   // Self-test state
   const [testingSection, setTestingSection] = useState<number | null>(null);
@@ -50,7 +51,9 @@ function LifeSupport() {
       setEnvironment(envData);
       setAlerts(alertsData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load life support data');
+      const message = err instanceof Error ? err.message : 'Failed to load life support data';
+      const traceId = err instanceof ApiError ? err.traceId : null;
+      setError({ message, traceId });
     } finally {
       if (init) setLoading(false);
     }
@@ -61,7 +64,9 @@ function LifeSupport() {
       await api.lifeSupport.acknowledgeAlert(alertId);
       await loadData(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to acknowledge alert');
+      const message = err instanceof Error ? err.message : 'Failed to acknowledge alert';
+      const traceId = err instanceof ApiError ? err.traceId : null;
+      setError({ message, traceId });
     }
   }
 
@@ -73,7 +78,9 @@ function LifeSupport() {
       const result = await api.lifeSupport.runSelfTest(sectionId);
       setTestResult(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Self-test failed');
+      const message = err instanceof Error ? err.message : 'Self-test failed';
+      const traceId = err instanceof ApiError ? err.traceId : null;
+      setError({ message, traceId });
     } finally {
       setTestingSection(null);
     }
@@ -87,7 +94,7 @@ function LifeSupport() {
 
   async function handleAdjust() {
     if (!adjustingSection) return;
-    
+
     try {
       setAdjustLoading(true);
       setError(null);
@@ -98,7 +105,9 @@ function LifeSupport() {
       setAdjustingSection(null);
       await loadData(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to adjust environment');
+      const message = err instanceof Error ? err.message : 'Failed to adjust environment';
+      const traceId = err instanceof ApiError ? err.traceId : null;
+      setError({ message, traceId });
     } finally {
       setAdjustLoading(false);
     }
@@ -152,12 +161,7 @@ function LifeSupport() {
          </div>
       </div>
 
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded flex items-center gap-3">
-          <AlertOctagon className="w-5 h-5" />
-          <span>{error}</span>
-        </div>
-      )}
+      {error && <ErrorAlert error={error} />}
 
       {/* Test Result Display */}
       <AnimatePresence>

@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { api } from '../api/client';
+import { api, ApiError } from '../api/client';
 import type { Supply, CargoManifest, ResupplyRequest } from '../types';
 import { Card } from '../components/ui/Card';
-import { 
-  Package, 
-  AlertTriangle, 
-  ShoppingCart, 
-  MinusCircle, 
-  PlusCircle, 
+import { ErrorAlert, type ErrorInfo } from '../components/ui/ErrorAlert';
+import {
+  Package,
+  AlertTriangle,
+  ShoppingCart,
+  MinusCircle,
+  PlusCircle,
   Filter,
   RefreshCw,
   Box
@@ -19,7 +20,7 @@ function Inventory() {
   const [manifests, setManifests] = useState<CargoManifest[]>([]);
   const [resupplyRequests, setResupplyRequests] = useState<ResupplyRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorInfo | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   
   // Consume modal state
@@ -54,7 +55,9 @@ function Inventory() {
       setManifests(manifestsData);
       setResupplyRequests(requestsData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load inventory data');
+      const message = err instanceof Error ? err.message : 'Failed to load inventory data';
+      const traceId = err instanceof ApiError ? err.traceId : null;
+      setError({ message, traceId });
     } finally {
       if (init) setLoading(false);
     }
@@ -67,7 +70,9 @@ function Inventory() {
       await api.inventory.unloadManifest(manifestId);
       await loadData(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to unload manifest');
+      const message = err instanceof Error ? err.message : 'Failed to unload manifest';
+      const traceId = err instanceof ApiError ? err.traceId : null;
+      setError({ message, traceId });
     } finally {
       setUnloadingManifest(null);
     }
@@ -75,7 +80,7 @@ function Inventory() {
 
   async function handleConsume() {
     if (!consumingSupply) return;
-    
+
     try {
       setConsumeLoading(true);
       setError(null);
@@ -83,7 +88,9 @@ function Inventory() {
       setConsumingSupply(null);
       await loadData(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to consume supply');
+      const message = err instanceof Error ? err.message : 'Failed to consume supply';
+      const traceId = err instanceof ApiError ? err.traceId : null;
+      setError({ message, traceId });
     } finally {
       setConsumeLoading(false);
     }
@@ -91,7 +98,7 @@ function Inventory() {
 
   async function handleResupply() {
     if (!resupplyingSupply) return;
-    
+
     try {
       setResupplyLoading(true);
       setError(null);
@@ -99,7 +106,9 @@ function Inventory() {
       setResupplyingSupply(null);
       await loadData(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to request resupply');
+      const message = err instanceof Error ? err.message : 'Failed to request resupply';
+      const traceId = err instanceof ApiError ? err.traceId : null;
+      setError({ message, traceId });
     } finally {
       setResupplyLoading(false);
     }
@@ -175,12 +184,7 @@ function Inventory() {
          </div>
       </div>
 
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5" />
-          <span>{error}</span>
-        </div>
-      )}
+      {error && <ErrorAlert error={error} />}
 
       {/* Category Filter Bar */}
       <div className="flex overflow-x-auto pb-2 gap-2 scrollbar-thin scrollbar-thumb-space-700 scrollbar-track-transparent">

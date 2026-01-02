@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
-import { api } from '../api/client';
+import { api, ApiError } from '../api/client';
 import type { PowerGridStatus, PowerAllocation } from '../types';
 import { Card } from '../components/ui/Card';
-import { 
-  Zap, 
-  Battery, 
-  Cpu, 
-  Activity, 
-  AlertTriangle, 
-  Plus, 
+import { ErrorAlert, type ErrorInfo } from '../components/ui/ErrorAlert';
+import {
+  Zap,
+  Battery,
+  Cpu,
+  Activity,
+  AlertTriangle,
+  Plus,
   Power as PowerIcon,
   RefreshCw,
   Trash2,
@@ -20,7 +21,7 @@ function Power() {
   const [grid, setGrid] = useState<PowerGridStatus | null>(null);
   const [allocations, setAllocations] = useState<PowerAllocation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorInfo | null>(null);
   
   // Allocation modal state
   const [showAllocateModal, setShowAllocateModal] = useState(false);
@@ -49,7 +50,9 @@ function Power() {
       setGrid(gridData);
       setAllocations(allocData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load power data');
+      const message = err instanceof Error ? err.message : 'Failed to load power data';
+      const traceId = err instanceof ApiError ? err.traceId : null;
+      setError({ message, traceId });
     } finally {
       if (init) setLoading(false);
     }
@@ -57,10 +60,10 @@ function Power() {
 
   async function handleAllocate() {
     if (!allocSystem.trim()) {
-      setError('System name is required');
+      setError({ message: 'System name is required', traceId: null });
       return;
     }
-    
+
     try {
       setAllocLoading(true);
       setError(null);
@@ -71,7 +74,9 @@ function Power() {
       setAllocPriority(5);
       await loadData(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to allocate power');
+      const message = err instanceof Error ? err.message : 'Failed to allocate power';
+      const traceId = err instanceof ApiError ? err.traceId : null;
+      setError({ message, traceId });
     } finally {
       setAllocLoading(false);
     }
@@ -84,7 +89,9 @@ function Power() {
       await api.power.deallocate(systemName);
       await loadData(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to deallocate power');
+      const message = err instanceof Error ? err.message : 'Failed to deallocate power';
+      const traceId = err instanceof ApiError ? err.traceId : null;
+      setError({ message, traceId });
     } finally {
       setDeallocatingSystem(null);
     }
@@ -141,12 +148,7 @@ function Power() {
          </div>
       </div>
 
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5" />
-          <span>{error}</span>
-        </div>
-      )}
+      {error && <ErrorAlert error={error} />}
 
       {/* Main Grid Visualization */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

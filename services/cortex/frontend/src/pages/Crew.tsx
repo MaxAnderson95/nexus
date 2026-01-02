@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { api } from '../api/client';
+import { api, ApiError } from '../api/client';
 import type { CrewMember, Section } from '../types';
 import { Card } from '../components/ui/Card';
-import { 
-  Users, 
-  Search, 
-  MapPin, 
-  Shield, 
-  Briefcase, 
+import { ErrorAlert, type ErrorInfo } from '../components/ui/ErrorAlert';
+import {
+  Users,
+  Search,
+  MapPin,
+  Shield,
+  Briefcase,
   UserCircle,
   ArrowRightLeft,
   Filter,
@@ -20,15 +21,15 @@ function Crew() {
   const [crew, setCrew] = useState<CrewMember[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorInfo | null>(null);
   const [selectedSection, setSelectedSection] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // Relocate modal state
   const [relocatingMember, setRelocatingMember] = useState<CrewMember | null>(null);
   const [relocateTargetSection, setRelocateTargetSection] = useState<number | null>(null);
   const [relocateLoading, setRelocateLoading] = useState(false);
-  const [relocateError, setRelocateError] = useState<string | null>(null);
+  const [relocateError, setRelocateError] = useState<ErrorInfo | null>(null);
 
   useEffect(() => {
     loadData();
@@ -47,7 +48,9 @@ function Crew() {
       setCrew(crewData);
       setSections(sectionsData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load crew data');
+      const message = err instanceof Error ? err.message : 'Failed to load crew data';
+      const traceId = err instanceof ApiError ? err.traceId : null;
+      setError({ message, traceId });
     } finally {
       if (init) setLoading(false);
     }
@@ -55,7 +58,7 @@ function Crew() {
 
   async function handleRelocate() {
     if (!relocatingMember || !relocateTargetSection) return;
-    
+
     try {
       setRelocateLoading(true);
       setRelocateError(null);
@@ -64,7 +67,9 @@ function Crew() {
       setRelocateTargetSection(null);
       await loadData(false);
     } catch (err) {
-      setRelocateError(err instanceof Error ? err.message : 'Failed to relocate crew member');
+      const message = err instanceof Error ? err.message : 'Failed to relocate crew member';
+      const traceId = err instanceof ApiError ? err.traceId : null;
+      setRelocateError({ message, traceId });
     } finally {
       setRelocateLoading(false);
     }
@@ -140,12 +145,7 @@ function Crew() {
          </div>
       </div>
 
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5" />
-          <span>{error}</span>
-        </div>
-      )}
+      {error && <ErrorAlert error={error} />}
 
       {/* Section Filter Bar */}
       <div className="flex overflow-x-auto pb-2 gap-2 scrollbar-thin scrollbar-thumb-space-700 scrollbar-track-transparent">
@@ -291,12 +291,7 @@ function Crew() {
                   </div>
                 </div>
 
-                {relocateError && (
-                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-sm flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" />
-                    {relocateError}
-                  </div>
-                )}
+                {relocateError && <ErrorAlert error={relocateError} />}
 
                 <div>
                   <label className="block text-xs font-mono text-cyan-500/70 uppercase mb-2">Select Destination Section</label>

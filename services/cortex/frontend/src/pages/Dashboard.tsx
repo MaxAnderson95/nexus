@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../api/client';
+import { api, ApiError } from '../api/client';
 import type { DashboardStatus } from '../types';
 import { Card, StatsCard } from '../components/ui/Card';
-import { 
-  Users, 
-  Anchor, 
-  ThermometerSun, 
-  Zap, 
-  Package, 
-  AlertTriangle, 
+import { ErrorAlert, type ErrorInfo } from '../components/ui/ErrorAlert';
+import {
+  Users,
+  Anchor,
+  ThermometerSun,
+  Zap,
+  Package,
+  AlertTriangle,
   Activity,
   RefreshCw
 } from 'lucide-react';
@@ -18,7 +19,7 @@ import { motion } from 'framer-motion';
 function Dashboard() {
   const [status, setStatus] = useState<DashboardStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorInfo | null>(null);
 
   useEffect(() => {
     loadDashboard();
@@ -33,7 +34,9 @@ function Dashboard() {
       const data = await api.dashboard.getStatus();
       setStatus(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard');
+      const message = err instanceof Error ? err.message : 'Failed to load dashboard';
+      const traceId = err instanceof ApiError ? err.traceId : null;
+      setError({ message, traceId });
     } finally {
       if (init) setLoading(false);
     }
@@ -54,8 +57,8 @@ function Dashboard() {
         <div className="flex flex-col items-center p-8 text-center">
           <AlertTriangle className="w-12 h-12 text-red-500 mb-4" />
           <h3 className="text-xl text-red-400 font-bold mb-2 uppercase tracking-wide">Signal Lost</h3>
-          <p className="text-red-300/70 font-mono mb-6">{error}</p>
-          <button 
+          <ErrorAlert error={error} className="mb-6 text-left" />
+          <button
             onClick={() => loadDashboard()}
             className="px-6 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 rounded transition-all font-mono text-sm uppercase tracking-wider flex items-center gap-2"
           >
