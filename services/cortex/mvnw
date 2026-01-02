@@ -34,5 +34,6 @@ fi
 
 # Run Maven with the wrapper
 exec java $MAVEN_OPTS \
+    -Dmaven.multiModuleProjectDirectory="$MAVEN_PROJECTBASEDIR" \
     -classpath "$WRAPPER_JAR" \
     org.apache.maven.wrapper.MavenWrapperMain "$@"
