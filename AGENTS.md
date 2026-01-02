@@ -242,7 +242,7 @@ Set via environment: `CHAOS_DEFAULT=low` or per-service: `POWER_CHAOS=high`
 - `docker-compose.yml` - Local development environment
 - `services/cortex/frontend/src/types/index.ts` - Frontend type definitions
 - `services/cortex/frontend/src/api/client.ts` - API client
-- `helm/nexus-station/values.yaml` - Kubernetes configuration
+- `charts/nexus-station/values.yaml` - Kubernetes configuration
 - `load-generator/locustfile.py` - Load testing scenarios
 
 ## Common Tasks

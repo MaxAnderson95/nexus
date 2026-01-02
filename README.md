@@ -288,7 +288,7 @@ nexus_station/
 │   ├── inventory-service/
 │   ├── life-support-service/
 │   └── power-service/
-├── helm/nexus-station/        # Kubernetes deployment
+├── charts/nexus-station/      # Kubernetes deployment
 ├── load-generator/            # Locust load tests
 └── docker-compose.yml
 ```
@@ -359,15 +359,15 @@ docker build -t your-registry/power-service:0.1.0 ./services/power-service
 # ... repeat for other services
 
 # Install
-helm install nexus-station ./helm/nexus-station \
+helm install nexus-station ./charts/nexus-station \
   --set global.imageRegistry=your-registry
 
 # With OpenTelemetry enabled
-helm install nexus-station ./helm/nexus-station \
+helm install nexus-station ./charts/nexus-station \
   --set global.otel.disabled=false
 
 # With chaos enabled
-helm install nexus-station ./helm/nexus-station \
+helm install nexus-station ./charts/nexus-station \
   --set global.chaos.enabled=true \
   --set global.chaos.errorRate=0.1
 ```
