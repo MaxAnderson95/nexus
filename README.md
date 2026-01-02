@@ -1,6 +1,8 @@
 # NEXUS STATION
 
-A microservices-based space station management system designed to demonstrate distributed tracing with OpenTelemetry. Built with Java 17, Spring Boot 3.4, React 18, and TypeScript.
+A microservices-based space station management system designed to demonstrate OpenTelemetry. Built with Java 17, Spring Boot 3.4, React 18, and TypeScript.
+
+![Screenshot of NEXUS Station Dashboard](Nexus.png)
 
 ## Overview
 
@@ -14,49 +16,6 @@ NEXUS Station simulates operations management for a space station, including:
 
 ## Architecture
 
-```
-                      ┌───────────────────────────────────────┐
-                      │             CORTEX (BFF)              │
-                      │       React SPA + API Gateway         │
-                      │             Port 8080                 │
-                      └───────────────────┬───────────────────┘
-                                          │
-        ┌─────────────┬───────────────────┼───────────────────┬─────────────┐
-        ▼             ▼                   ▼                   ▼             ▼
-   ┌─────────┐   ┌─────────┐        ┌───────────┐        ┌─────────┐   ┌───────────┐
-   │ Docking │   │  Crew   │        │   Life    │        │  Power  │   │ Inventory │
-   │  :8080  │   │  :8080  │        │  Support  │        │  :8080  │   │   :8080   │
-   └────┬────┘   └────┬────┘        │   :8080   │        └────△────┘   └─────┬─────┘
-        │             │             └─────┬─────┘             │              │
-        │             │                   │                   │              │
-        │             │                   └───────────────────┘              │
-        │             │                                                      │
-        └──────┬──────┴──────────────────────────────────────────────────────┘
-               │
-               ▼
-   ┌────────────────────────────────────────────────────────────────────────────┐
-   │                         Service Dependencies                              │
-   │                                                                            │
-   │   Power ◄─── Life Support ◄─── Crew                                       │
-   │     △                                                                      │
-   │     │                                                                      │
-   │     └─────── Docking ────────────────► Crew                                │
-   │                 △                                                          │
-   │                 │                                                          │
-   │                 └─────── Inventory ──────────► Crew                        │
-   └────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Service Dependencies
-
-| Service | Depends On | Purpose |
-|---------|------------|---------|
-| Power | - | Base service (no dependencies) |
-| Life Support | Power | Power allocation for environmental systems |
-| Crew | Life Support | Section capacity adjustments when crew relocates |
-| Docking | Power, Crew | Bay power allocation, crew notifications |
-| Inventory | Docking, Crew | Cargo manifest linking, crew for cargo handling |
-
 ### Tech Stack
 
 | Component | Technology |
@@ -69,6 +28,104 @@ NEXUS Station simulates operations management for a space station, including:
 | Observability | OpenTelemetry (enabled in Kubernetes) |
 | Container Runtime | Docker / Podman |
 | Orchestration | Kubernetes + Helm |
+
+### Service Dependencies
+
+The system follows a microservices architecture with CORTEX acting as the Backend-for-Frontend (BFF) layer. All inter-service communication uses synchronous REST calls.
+
+```mermaid
+flowchart TB
+    subgraph Frontend
+        UI[React Dashboard]
+    end
+
+    subgraph BFF
+        CORTEX[CORTEX<br/>:8080]
+    end
+
+    subgraph Backend Services
+        POWER[Power Service]
+        DOCKING[Docking Service]
+        CREW[Crew Service]
+        LIFE[Life Support Service]
+        INVENTORY[Inventory Service]
+    end
+
+    subgraph Infrastructure
+        PG[(PostgreSQL<br/>:5432)]
+        REDIS[(Redis<br/>:6379)]
+        OTEL[OpenTelemetry<br/>Collector]
+    end
+
+    UI --> CORTEX
+
+    CORTEX --> POWER
+    CORTEX --> DOCKING
+    CORTEX --> CREW
+    CORTEX --> LIFE
+    CORTEX --> INVENTORY
+
+    LIFE -->|power allocation<br/>priority: 1| POWER
+    DOCKING -->|power allocation<br/>priority: 4| POWER
+    DOCKING -->|crew arrivals| CREW
+    CREW -->|capacity updates| LIFE
+    INVENTORY -->|schedule delivery| DOCKING
+    INVENTORY -->|available crew| CREW
+
+    POWER --> PG
+    DOCKING --> PG
+    CREW --> PG
+    LIFE --> PG
+    INVENTORY --> PG
+
+    POWER --> REDIS
+    DOCKING --> REDIS
+    CREW --> REDIS
+    LIFE --> REDIS
+    INVENTORY --> REDIS
+
+    CORTEX -.-> OTEL
+    POWER -.-> OTEL
+    DOCKING -.-> OTEL
+    CREW -.-> OTEL
+    LIFE -.-> OTEL
+    INVENTORY -.-> OTEL
+```
+
+### Dependency Matrix
+
+| Service | Depends On | Purpose of Dependency |
+|---------|------------|----------------------|
+| **CORTEX** | power-service | Fetches power grid status, sources, allocations |
+| | docking-service | Manages docking bays, ship operations, schedules |
+| | crew-service | Retrieves crew roster, sections, relocations |
+| | life-support-service | Monitors environment, alerts, adjustments |
+| | inventory-service | Tracks supplies, cargo, resupply requests |
+| **Life Support** | power-service | Allocates power for environmental systems (priority: 1 - highest) |
+| **Docking** | power-service | Allocates power for docking bay operations (priority: 4) |
+| | crew-service | Registers arriving crew members from docked ships |
+| **Crew** | life-support-service | Notifies of crew occupancy changes for capacity adjustments |
+| **Inventory** | docking-service | Schedules cargo deliveries via docking bays |
+| | crew-service | Fetches available crew for cargo operations |
+| **Power** | *(none)* | Core service with no service dependencies |
+
+### Infrastructure Dependencies
+
+All backend services share the following infrastructure:
+
+| Infrastructure | Purpose | Used By |
+|---------------|---------|---------|
+| PostgreSQL | Persistent storage (schema-per-service) | All backend services |
+| Redis | Caching and session management | All backend services |
+| OpenTelemetry Collector | Distributed tracing and metrics | All services (when enabled) |
+
+**Database Schemas:**
+
+- `power` - Power grid, sources, allocations
+- `docking` - Bays, ships, docking logs
+- `crew` - Members, sections, assignments
+- `life_support` - Environment readings, sections, alerts
+- `inventory` - Supplies, manifests, resupply requests
 
 ## Quick Start
 
@@ -91,7 +148,7 @@ docker compose up -d --build
 podman compose up -d --build
 ```
 
-Open http://localhost:8080 to access the dashboard.
+Open <http://localhost:8080> to access the dashboard.
 
 ### With Load Generator
 
@@ -99,7 +156,7 @@ Open http://localhost:8080 to access the dashboard.
 docker compose --profile load up -d --build
 ```
 
-Access Locust UI at http://localhost:8089
+Access Locust UI at <http://localhost:8089>
 
 ## Configuration
 
@@ -144,11 +201,13 @@ POWER_CHAOS=medium
 All endpoints are proxied through CORTEX at `/api/*`:
 
 ### Dashboard
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/dashboard/status` | GET | Aggregated system status |
 
 ### Docking
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/docking/bays` | GET | List all docking bays |
@@ -158,6 +217,7 @@ All endpoints are proxied through CORTEX at `/api/*`:
 | `/api/docking/logs` | GET | Docking activity log |
 
 ### Crew
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/crew` | GET | Full crew roster |
@@ -167,6 +227,7 @@ All endpoints are proxied through CORTEX at `/api/*`:
 | `/api/crew/count` | GET | Crew statistics |
 
 ### Life Support
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/life-support/environment` | GET | All section readings |
@@ -176,6 +237,7 @@ All endpoints are proxied through CORTEX at `/api/*`:
 | `/api/life-support/alerts/{id}/acknowledge` | POST | Acknowledge alert |
 
 ### Power
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/power/grid` | GET | Grid status overview |
@@ -185,6 +247,7 @@ All endpoints are proxied through CORTEX at `/api/*`:
 | `/api/power/deallocate/{id}` | DELETE | Release allocation |
 
 ### Inventory
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/inventory/supplies` | GET | All supplies |
@@ -199,10 +262,10 @@ All endpoints are proxied through CORTEX at `/api/*`:
 
 ```
 nexus_station/
-├── cortex/                    # BFF + React frontend
-│   ├── frontend/              # React/TypeScript app
-│   └── src/                   # Spring Boot BFF
 ├── services/
+│   ├── cortex/                # BFF + React frontend
+│   │   ├── frontend/          # React/TypeScript app
+│   │   └── src/               # Spring Boot BFF
 │   ├── crew-service/
 │   ├── docking-service/
 │   ├── inventory-service/
@@ -233,7 +296,7 @@ cd services/power-service
 ### Frontend Development
 
 ```bash
-cd cortex/frontend
+cd services/cortex/frontend
 
 # Install dependencies
 npm install
@@ -274,7 +337,7 @@ npm run lint
 
 ```bash
 # Build and push images
-docker build -t your-registry/cortex:0.1.0 ./cortex
+docker build -t your-registry/cortex:0.1.0 ./services/cortex
 docker build -t your-registry/power-service:0.1.0 ./services/power-service
 # ... repeat for other services
 
@@ -331,6 +394,7 @@ When deployed to Kubernetes with `global.otel.disabled=false`:
 - Custom spans for business operations (when `customTelemetry.enabled=true`)
 
 Recommended setup:
+
 - OpenTelemetry Operator for auto-instrumentation
 - Jaeger, Tempo, or similar for trace visualization
 - Prometheus for metrics

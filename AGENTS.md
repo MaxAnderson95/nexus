@@ -38,7 +38,7 @@ Microservices-based space station management system demonstrating OpenTelemetry 
 Use NVM to get access to the correct Node version (v20.x):
 
 ```bash
-cd cortex/frontend
+cd services/cortex/frontend
 
 npm install          # Install dependencies
 npm run dev          # Development server (port 3000)
@@ -240,8 +240,8 @@ Set via environment: `CHAOS_DEFAULT=low` or per-service: `POWER_CHAOS=high`
 ## Important Files
 
 - `docker-compose.yml` - Local development environment
-- `cortex/frontend/src/types/index.ts` - Frontend type definitions
-- `cortex/frontend/src/api/client.ts` - API client
+- `services/cortex/frontend/src/types/index.ts` - Frontend type definitions
+- `services/cortex/frontend/src/api/client.ts` - API client
 - `helm/nexus-station/values.yaml` - Kubernetes configuration
 - `load-generator/locustfile.py` - Load testing scenarios
 

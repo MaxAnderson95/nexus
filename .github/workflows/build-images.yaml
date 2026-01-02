@@ -18,7 +18,7 @@ jobs:
       matrix:
         include:
           - name: cortex
-            context: ./cortex
+            context: ./services/cortex
           - name: load-generator
             context: ./load-generator
           - name: power-service
