@@ -46,6 +46,8 @@ spec:
           env:
             - name: SERVICE_NAME
               value: "docking-service"
+            - name: OTEL_SERVICE_NAME
+              value: "docking-service"
             {{- include "nexus-station.commonEnv" . | nindent 12 }}
             {{- include "nexus-station.otelEnv" . | nindent 12 }}
             {{- with .Values.dockingService.env }}

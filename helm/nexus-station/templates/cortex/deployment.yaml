@@ -46,6 +46,8 @@ spec:
           env:
             - name: SERVICE_NAME
               value: "cortex"
+            - name: OTEL_SERVICE_NAME
+              value: "cortex"
             {{- include "nexus-station.commonEnv" . | nindent 12 }}
             {{- include "nexus-station.otelEnv" . | nindent 12 }}
             - name: DOCKING_SERVICE_URL
