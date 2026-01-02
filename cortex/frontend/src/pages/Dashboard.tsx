@@ -22,18 +22,20 @@ function Dashboard() {
 
   useEffect(() => {
     loadDashboard();
+    const interval = setInterval(() => loadDashboard(false), 15000);
+    return () => clearInterval(interval);
   }, []);
 
-  async function loadDashboard() {
+  async function loadDashboard(init = true) {
     try {
-      setLoading(true);
+      if (init) setLoading(true);
       setError(null);
       const data = await api.dashboard.getStatus();
       setStatus(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load dashboard');
     } finally {
-      setLoading(false);
+      if (init) setLoading(false);
     }
   }
 
@@ -54,7 +56,7 @@ function Dashboard() {
           <h3 className="text-xl text-red-400 font-bold mb-2 uppercase tracking-wide">Signal Lost</h3>
           <p className="text-red-300/70 font-mono mb-6">{error}</p>
           <button 
-            onClick={loadDashboard}
+            onClick={() => loadDashboard()}
             className="px-6 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 rounded transition-all font-mono text-sm uppercase tracking-wider flex items-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
@@ -92,7 +94,7 @@ function Dashboard() {
              </div>
           </div>
           <button
-             onClick={loadDashboard}
+             onClick={() => loadDashboard()}
              className="p-2 text-cyan-500/50 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-full transition-all"
              title="Refresh Data"
           >

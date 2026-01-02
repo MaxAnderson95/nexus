@@ -55,23 +55,39 @@ public class CrewService {
         if (customSpansEnabled) {
             Span span = tracer.spanBuilder("crew.getAllCrew").startSpan();
             try (Scope scope = span.makeCurrent()) {
-                List<CrewMemberDto> crew = crewMemberRepository.findAll().stream()
-                        .map(CrewMemberDto::fromEntity)
+                List<CrewMember> allCrew = crewMemberRepository.findAll();
+                List<Section> allSections = sectionRepository.findAll();
+                
+                List<CrewMemberDto> crew = allCrew.stream()
+                        .map(member -> mapToDto(member, allSections))
                         .toList();
+                        
                 span.setAttribute("crew.count", crew.size());
                 return crew;
             } finally {
                 span.end();
             }
         }
-        return crewMemberRepository.findAll().stream()
-                .map(CrewMemberDto::fromEntity)
+        
+        List<CrewMember> allCrew = crewMemberRepository.findAll();
+        List<Section> allSections = sectionRepository.findAll();
+        
+        return allCrew.stream()
+                .map(member -> mapToDto(member, allSections))
                 .toList();
     }
     
     public Optional<CrewMemberDto> getCrewById(Long id) {
         return crewMemberRepository.findById(id)
-                .map(CrewMemberDto::fromEntity);
+                .map(member -> {
+                    String sectionName = null;
+                    if (member.getSectionId() != null) {
+                        sectionName = sectionRepository.findById(member.getSectionId())
+                                .map(Section::getName)
+                                .orElse("Unknown");
+                    }
+                    return CrewMemberDto.fromEntity(member, sectionName);
+                });
     }
     
     public CrewSummary getCrewCount() {
@@ -145,8 +161,12 @@ public class CrewService {
                     .setAttribute("section.id", sectionId)
                     .startSpan();
             try (Scope scope = span.makeCurrent()) {
+                String sectionName = sectionRepository.findById(sectionId)
+                        .map(Section::getName)
+                        .orElse("Unknown");
+                        
                 List<CrewMemberDto> crew = crewMemberRepository.findBySectionId(sectionId).stream()
-                        .map(CrewMemberDto::fromEntity)
+                        .map(member -> CrewMemberDto.fromEntity(member, sectionName))
                         .toList();
                 span.setAttribute("crew.count", crew.size());
                 return crew;
@@ -154,14 +174,20 @@ public class CrewService {
                 span.end();
             }
         }
+        
+        String sectionName = sectionRepository.findById(sectionId)
+                .map(Section::getName)
+                .orElse("Unknown");
+                
         return crewMemberRepository.findBySectionId(sectionId).stream()
-                .map(CrewMemberDto::fromEntity)
+                .map(member -> CrewMemberDto.fromEntity(member, sectionName))
                 .toList();
     }
     
     public List<CrewMemberDto> getAvailableCrew() {
+        List<Section> allSections = sectionRepository.findAll();
         return crewMemberRepository.findByStatus(CrewMember.CrewStatus.ACTIVE).stream()
-                .map(CrewMemberDto::fromEntity)
+                .map(member -> mapToDto(member, allSections))
                 .toList();
     }
     
@@ -240,7 +266,7 @@ public class CrewService {
         log.info("Successfully relocated crew member {} from section {} to section {}",
                 crewMember.getName(), previousSectionId, request.targetSectionId());
         
-        return CrewMemberDto.fromEntity(crewMember);
+        return CrewMemberDto.fromEntity(crewMember, targetSection.getName());
     }
     
     @Transactional
@@ -300,7 +326,7 @@ public class CrewService {
                 request.crewCount(), arrivalSection.getName());
         
         return newCrewMembers.stream()
-                .map(CrewMemberDto::fromEntity)
+                .map(member -> CrewMemberDto.fromEntity(member, arrivalSection.getName()))
                 .toList();
     }
     
@@ -339,5 +365,18 @@ public class CrewService {
         public SectionAtCapacityException(String message) {
             super(message);
         }
+    }
+    
+    // Helper method to map entity to DTO efficiently
+    private CrewMemberDto mapToDto(CrewMember member, List<Section> sections) {
+        String sectionName = null;
+        if (member.getSectionId() != null) {
+            sectionName = sections.stream()
+                    .filter(s -> s.getId().equals(member.getSectionId()))
+                    .findFirst()
+                    .map(Section::getName)
+                    .orElse("Unknown");
+        }
+        return CrewMemberDto.fromEntity(member, sectionName);
     }
 }

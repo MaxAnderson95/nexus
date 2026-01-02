@@ -85,71 +85,83 @@ public class DataInitializer implements ApplicationRunner {
     }
     
     private void initializeSections() {
-        // Command Section - Deck 1
+        // Section IDs must match life-support service section IDs (1-8)
+        // Life-support: 1=Bridge, 2=Engineering, 3=Habitation Deck A, 4=Habitation Deck B,
+        //               5=Medical Bay, 6=Science Lab, 7=Cargo Hold, 8=Maintenance Bay
+
+        // ID 1: Bridge/Command Center - Deck 1
         Section command = new Section();
+        command.setId(1L);
         command.setName("Command Center");
         command.setDeck(1);
         command.setMaxCapacity(20);
         command.setCurrentOccupancy(0);
         sectionRepository.save(command);
-        
-        // Engineering - Deck 2
+
+        // ID 2: Engineering - Deck 2
         Section engineering = new Section();
+        engineering.setId(2L);
         engineering.setName("Engineering Bay");
         engineering.setDeck(2);
         engineering.setMaxCapacity(30);
         engineering.setCurrentOccupancy(0);
         sectionRepository.save(engineering);
-        
-        // Science Labs - Deck 3
-        Section scienceLabs = new Section();
-        scienceLabs.setName("Science Labs");
-        scienceLabs.setDeck(3);
-        scienceLabs.setMaxCapacity(25);
-        scienceLabs.setCurrentOccupancy(0);
-        sectionRepository.save(scienceLabs);
-        
-        // Medical Bay - Deck 3
-        Section medical = new Section();
-        medical.setName("Medical Bay");
-        medical.setDeck(3);
-        medical.setMaxCapacity(15);
-        medical.setCurrentOccupancy(0);
-        sectionRepository.save(medical);
-        
-        // Crew Quarters A - Deck 4
+
+        // ID 3: Habitation Deck A / Crew Quarters Alpha - Deck 4
         Section quartersA = new Section();
+        quartersA.setId(3L);
         quartersA.setName("Crew Quarters Alpha");
         quartersA.setDeck(4);
         quartersA.setMaxCapacity(40);
         quartersA.setCurrentOccupancy(0);
         sectionRepository.save(quartersA);
-        
-        // Crew Quarters B - Deck 4
+
+        // ID 4: Habitation Deck B / Crew Quarters Beta - Deck 4
         Section quartersB = new Section();
+        quartersB.setId(4L);
         quartersB.setName("Crew Quarters Beta");
         quartersB.setDeck(4);
         quartersB.setMaxCapacity(40);
         quartersB.setCurrentOccupancy(0);
         sectionRepository.save(quartersB);
-        
-        // Cargo Bay - Deck 5
+
+        // ID 5: Medical Bay - Deck 3
+        Section medical = new Section();
+        medical.setId(5L);
+        medical.setName("Medical Bay");
+        medical.setDeck(3);
+        medical.setMaxCapacity(15);
+        medical.setCurrentOccupancy(0);
+        sectionRepository.save(medical);
+
+        // ID 6: Science Lab - Deck 3
+        Section scienceLabs = new Section();
+        scienceLabs.setId(6L);
+        scienceLabs.setName("Science Labs");
+        scienceLabs.setDeck(3);
+        scienceLabs.setMaxCapacity(25);
+        scienceLabs.setCurrentOccupancy(0);
+        sectionRepository.save(scienceLabs);
+
+        // ID 7: Cargo Hold/Bay - Deck 5
         Section cargo = new Section();
+        cargo.setId(7L);
         cargo.setName("Cargo Bay");
         cargo.setDeck(5);
         cargo.setMaxCapacity(10);
         cargo.setCurrentOccupancy(0);
         sectionRepository.save(cargo);
-        
-        // Docking Section - Deck 5
+
+        // ID 8: Maintenance Bay / Docking Section - Deck 5
         Section docking = new Section();
+        docking.setId(8L);
         docking.setName("Docking Section");
         docking.setDeck(5);
         docking.setMaxCapacity(15);
         docking.setCurrentOccupancy(0);
         sectionRepository.save(docking);
-        
-        log.info("Created 8 sections");
+
+        log.info("Created 8 sections with IDs 1-8 matching life-support service");
     }
     
     private void initializeCrewMembers() {
@@ -193,24 +205,23 @@ public class DataInitializer implements ApplicationRunner {
                 crew.setRole(roles[6 + random.nextInt(roles.length - 6)]);
             }
             
-            // Assign to section based on role
+            // Assign to section based on role - sections are ordered by ID 1-8
+            // ID 1: Command, ID 2: Engineering, ID 3: Quarters Alpha, ID 4: Quarters Beta,
+            // ID 5: Medical, ID 6: Science Labs, ID 7: Cargo, ID 8: Docking
             Section section;
             if (i < 5) {
-                section = sections.get(0); // Command for top officers
+                section = findSectionById(sections, 1L); // Command for top officers
             } else if (crew.getRole().contains("Engineer") || crew.getRole().equals("Technician")) {
-                section = sections.get(1); // Engineering
+                section = findSectionById(sections, 2L); // Engineering
             } else if (crew.getRole().contains("Science")) {
-                section = sections.get(2); // Science Labs
+                section = findSectionById(sections, 6L); // Science Labs
             } else if (crew.getRole().contains("Medical")) {
-                section = sections.get(3); // Medical Bay
+                section = findSectionById(sections, 5L); // Medical Bay
             } else if (crew.getRole().contains("Security")) {
-                section = sections.stream()
-                        .filter(s -> s.getName().contains("Quarters"))
-                        .findFirst()
-                        .orElse(sections.get(4));
+                section = findSectionById(sections, 3L); // Quarters Alpha
             } else {
-                // General crew - distribute among quarters
-                section = random.nextBoolean() ? sections.get(4) : sections.get(5);
+                // General crew - distribute among quarters (ID 3 and 4)
+                section = findSectionById(sections, random.nextBoolean() ? 3L : 4L);
             }
             
             crew.setSectionId(section.getId());
@@ -235,5 +246,12 @@ public class DataInitializer implements ApplicationRunner {
         }
         
         log.info("Created {} crew members", crewCount);
+    }
+
+    private Section findSectionById(List<Section> sections, Long id) {
+        return sections.stream()
+                .filter(s -> s.getId().equals(id))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Section not found with ID: " + id));
     }
 }

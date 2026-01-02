@@ -32,6 +32,8 @@ function Crew() {
 
   useEffect(() => {
     loadData();
+    const interval = setInterval(() => loadData(false), 15000);
+    return () => clearInterval(interval);
   }, []);
 
   async function loadData(init = true) {

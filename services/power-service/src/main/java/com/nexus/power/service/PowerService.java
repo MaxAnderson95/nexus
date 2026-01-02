@@ -221,20 +221,25 @@ public class PowerService {
     
     private void performDeallocation(DeallocateRequest request) {
         log.info("Deallocating power from system: {}", request.system());
-        
-        PowerAllocation allocation = allocationRepository.findBySystemName(request.system())
-                .orElseThrow(() -> new AllocationNotFoundException(
-                        "No allocation found for system: " + request.system()));
-        
+
+        Optional<PowerAllocation> allocationOpt = allocationRepository.findBySystemName(request.system());
+
+        if (allocationOpt.isEmpty()) {
+            log.info("No allocation found for system: {}, nothing to deallocate", request.system());
+            return;
+        }
+
+        PowerAllocation allocation = allocationOpt.get();
+
         // Log the action
         PowerLog logEntry = new PowerLog();
         logEntry.setAction(PowerLog.PowerAction.DEALLOCATE);
         logEntry.setAmountKw(allocation.getAllocatedKw());
         logEntry.setSystemName(request.system());
         logRepository.save(logEntry);
-        
+
         allocationRepository.delete(allocation);
-        
+
         log.info("Successfully deallocated {} kW from system: {}",
                 allocation.getAllocatedKw(), request.system());
     }
