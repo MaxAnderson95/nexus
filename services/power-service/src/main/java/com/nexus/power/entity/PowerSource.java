@@ -112,6 +112,7 @@ public class PowerSource {
     public enum PowerSourceStatus {
         ONLINE,
         OFFLINE,
+        STANDBY,
         MAINTENANCE,
         DEGRADED
     }

@@ -6,6 +6,7 @@ import com.nexus.lifesupport.entity.EnvironmentalSettings;
 import com.nexus.lifesupport.repository.AlertRepository;
 import com.nexus.lifesupport.repository.EnvironmentalReadingRepository;
 import com.nexus.lifesupport.repository.EnvironmentalSettingsRepository;
+import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -21,14 +22,17 @@ public class DataInitializer implements ApplicationRunner {
     private final EnvironmentalSettingsRepository settingsRepository;
     private final EnvironmentalReadingRepository readingRepository;
     private final AlertRepository alertRepository;
+    private final EntityManager entityManager;
     
     public DataInitializer(
             EnvironmentalSettingsRepository settingsRepository,
             EnvironmentalReadingRepository readingRepository,
-            AlertRepository alertRepository) {
+            AlertRepository alertRepository,
+            EntityManager entityManager) {
         this.settingsRepository = settingsRepository;
         this.readingRepository = readingRepository;
         this.alertRepository = alertRepository;
+        this.entityManager = entityManager;
     }
     
     @Override
@@ -48,15 +52,40 @@ public class DataInitializer implements ApplicationRunner {
         log.info("Life Support Service demo data check complete");
     }
     
+    /**
+     * Resets all tables and re-initializes demo data.
+     */
+    @Transactional
+    public void resetTables() {
+        log.info("Resetting Life Support Service tables...");
+        
+        // Delete all data using batch delete (single SQL DELETE statement)
+        alertRepository.deleteAllInBatch();
+        readingRepository.deleteAllInBatch();
+        settingsRepository.deleteAllInBatch();
+        
+        // Flush to ensure deletes are committed before inserts
+        entityManager.flush();
+        entityManager.clear();
+        
+        // Re-initialize demo data
+        initializeSettings();
+        initializeReadings();
+        initializeAlerts();
+        
+        log.info("Life Support Service tables reset complete");
+    }
+    
     private void initializeSettings() {
-        createSection(1L, "Bridge", 21.0, 22.0, 101.3, 45.0, 15, 8);
-        createSection(2L, "Engineering", 21.0, 24.0, 101.3, 40.0, 25, 12);
-        createSection(3L, "Habitation Deck A", 21.0, 22.0, 101.3, 50.0, 50, 35);
-        createSection(4L, "Habitation Deck B", 21.0, 22.0, 101.3, 50.0, 50, 28);
-        createSection(5L, "Medical Bay", 22.0, 21.0, 101.3, 55.0, 20, 5);
-        createSection(6L, "Science Lab", 21.0, 20.0, 101.3, 40.0, 15, 10);
-        createSection(7L, "Cargo Hold", 20.0, 18.0, 100.0, 35.0, 10, 2);
-        createSection(8L, "Maintenance Bay", 20.5, 23.0, 101.3, 40.0, 12, 6);
+        // All sections have very high max occupancy to avoid fake capacity issues
+        createSection(1L, "Bridge", 21.0, 22.0, 101.3, 45.0, 100, 8);
+        createSection(2L, "Engineering", 21.0, 22.0, 101.3, 40.0, 150, 12);
+        createSection(3L, "Habitation Deck A", 21.0, 22.0, 101.3, 50.0, 200, 35);
+        createSection(4L, "Habitation Deck B", 21.0, 22.0, 101.3, 50.0, 200, 28);
+        createSection(5L, "Medical Bay", 22.0, 21.0, 101.3, 55.0, 100, 5);
+        createSection(6L, "Science Lab", 21.0, 20.0, 101.3, 40.0, 100, 10);
+        createSection(7L, "Cargo Hold", 21.0, 20.0, 101.3, 40.0, 80, 2);
+        createSection(8L, "Maintenance Bay", 21.0, 22.0, 101.3, 40.0, 80, 6);
         
         log.info("Created 8 section settings");
     }
@@ -77,15 +106,15 @@ public class DataInitializer implements ApplicationRunner {
     }
     
     private void initializeReadings() {
-        // Create initial readings for each section with slight variations
-        createReading(1L, "Bridge", 20.9, 0.04, 22.1, 101.2, 44.5);
-        createReading(2L, "Engineering", 20.8, 0.05, 24.5, 101.1, 38.0);
+        // Create initial readings for each section - all nominal/healthy values
+        createReading(1L, "Bridge", 21.0, 0.04, 22.0, 101.3, 45.0);
+        createReading(2L, "Engineering", 21.0, 0.04, 22.0, 101.3, 40.0);
         createReading(3L, "Habitation Deck A", 21.0, 0.04, 22.0, 101.3, 50.0);
-        createReading(4L, "Habitation Deck B", 21.1, 0.04, 21.8, 101.4, 51.0);
+        createReading(4L, "Habitation Deck B", 21.0, 0.04, 22.0, 101.3, 50.0);
         createReading(5L, "Medical Bay", 22.0, 0.03, 21.0, 101.3, 55.0);
-        createReading(6L, "Science Lab", 20.5, 0.04, 20.2, 101.2, 40.0);
-        createReading(7L, "Cargo Hold", 19.8, 0.05, 17.5, 99.8, 33.0);
-        createReading(8L, "Maintenance Bay", 20.3, 0.05, 23.5, 101.0, 42.0);
+        createReading(6L, "Science Lab", 21.0, 0.04, 20.0, 101.3, 40.0);
+        createReading(7L, "Cargo Hold", 21.0, 0.04, 20.0, 101.3, 40.0);
+        createReading(8L, "Maintenance Bay", 21.0, 0.04, 22.0, 101.3, 40.0);
         
         log.info("Created 8 environmental readings");
     }
@@ -104,27 +133,8 @@ public class DataInitializer implements ApplicationRunner {
     }
     
     private void initializeAlerts() {
-        // Low O2 warning in Cargo Hold
-        createAlert(7L, "Cargo Hold", Alert.AlertType.O2_LOW, Alert.AlertSeverity.WARNING,
-                "O2 levels below optimal in Cargo Hold (19.8%)");
-        
-        // Temperature warning in Engineering
-        createAlert(2L, "Engineering", Alert.AlertType.TEMPERATURE_HIGH, Alert.AlertSeverity.WARNING,
-                "Temperature elevated in Engineering section (24.5C)");
-        
-        // Low pressure warning in Cargo Hold
-        createAlert(7L, "Cargo Hold", Alert.AlertType.PRESSURE_LOW, Alert.AlertSeverity.WARNING,
-                "Pressure below nominal in Cargo Hold (99.8 kPa)");
-        
-        // Info about maintenance
-        createAlert(8L, "Maintenance Bay", Alert.AlertType.SYSTEM_MALFUNCTION, Alert.AlertSeverity.INFO,
-                "Scheduled maintenance for air recycler in Maintenance Bay");
-        
-        // CO2 elevated in Engineering
-        createAlert(2L, "Engineering", Alert.AlertType.CO2_HIGH, Alert.AlertSeverity.INFO,
-                "CO2 slightly elevated in Engineering (0.05%)");
-        
-        log.info("Created 5 alerts");
+        // No initial alerts - system starts in healthy state for demo
+        log.info("No initial alerts - system is nominal");
     }
     
     private void createAlert(Long sectionId, String sectionName, Alert.AlertType type,

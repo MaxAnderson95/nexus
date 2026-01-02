@@ -4,9 +4,11 @@ import com.nexus.inventory.entity.CargoItem;
 import com.nexus.inventory.entity.CargoManifest;
 import com.nexus.inventory.entity.ResupplyRequest;
 import com.nexus.inventory.entity.Supply;
+import com.nexus.inventory.repository.CargoItemRepository;
 import com.nexus.inventory.repository.CargoManifestRepository;
 import com.nexus.inventory.repository.ResupplyRequestRepository;
 import com.nexus.inventory.repository.SupplyRepository;
+import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -21,14 +23,20 @@ public class DataInitializer implements ApplicationRunner {
     
     private final SupplyRepository supplyRepository;
     private final CargoManifestRepository manifestRepository;
+    private final CargoItemRepository cargoItemRepository;
     private final ResupplyRequestRepository resupplyRepository;
+    private final EntityManager entityManager;
     
     public DataInitializer(SupplyRepository supplyRepository,
                           CargoManifestRepository manifestRepository,
-                          ResupplyRequestRepository resupplyRepository) {
+                          CargoItemRepository cargoItemRepository,
+                          ResupplyRequestRepository resupplyRepository,
+                          EntityManager entityManager) {
         this.supplyRepository = supplyRepository;
         this.manifestRepository = manifestRepository;
+        this.cargoItemRepository = cargoItemRepository;
         this.resupplyRepository = resupplyRepository;
+        this.entityManager = entityManager;
     }
     
     @Override
@@ -60,50 +68,75 @@ public class DataInitializer implements ApplicationRunner {
         log.info("Inventory Service demo data check complete");
     }
     
+    /**
+     * Resets all tables and re-initializes demo data.
+     */
+    @Transactional
+    public void resetTables() {
+        log.info("Resetting Inventory Service tables...");
+        
+        // Delete in order respecting foreign key constraints (batch delete)
+        resupplyRepository.deleteAllInBatch();
+        cargoItemRepository.deleteAllInBatch();
+        manifestRepository.deleteAllInBatch();
+        supplyRepository.deleteAllInBatch();
+        
+        // Flush to ensure deletes are committed before inserts
+        entityManager.flush();
+        entityManager.clear();
+        
+        // Re-initialize demo data
+        initializeSupplies();
+        initializeCargoManifests();
+        initializeResupplyRequests();
+        
+        log.info("Inventory Service tables reset complete");
+    }
+    
     private void initializeSupplies() {
-        // FOOD supplies
+        // FOOD supplies - All well-stocked
         createSupply("Emergency Rations", Supply.SupplyCategory.FOOD, 500, "units", 100, 1L);
         createSupply("Freeze-Dried Meals", Supply.SupplyCategory.FOOD, 1200, "packets", 200, 1L);
         createSupply("Protein Supplements", Supply.SupplyCategory.FOOD, 300, "containers", 50, 1L);
-        createSupply("Fresh Produce", Supply.SupplyCategory.FOOD, 80, "kg", 100, 1L); // Low stock
+        createSupply("Fresh Produce", Supply.SupplyCategory.FOOD, 250, "kg", 100, 1L);
         
-        // MEDICAL supplies
+        // MEDICAL supplies - All well-stocked
         createSupply("First Aid Kits", Supply.SupplyCategory.MEDICAL, 50, "kits", 20, 2L);
         createSupply("Antibiotics", Supply.SupplyCategory.MEDICAL, 200, "doses", 100, 2L);
         createSupply("Pain Relievers", Supply.SupplyCategory.MEDICAL, 500, "doses", 150, 2L);
         createSupply("Surgical Supplies", Supply.SupplyCategory.MEDICAL, 30, "kits", 10, 2L);
-        createSupply("Radiation Treatment Packs", Supply.SupplyCategory.MEDICAL, 15, "units", 20, 2L); // Low stock
+        createSupply("Radiation Treatment Packs", Supply.SupplyCategory.MEDICAL, 50, "units", 20, 2L);
         
-        // MECHANICAL supplies
+        // MECHANICAL supplies - All well-stocked
         createSupply("Replacement Seals", Supply.SupplyCategory.MECHANICAL, 150, "units", 50, 3L);
         createSupply("Lubricants", Supply.SupplyCategory.MECHANICAL, 80, "liters", 30, 3L);
         createSupply("Structural Bolts", Supply.SupplyCategory.MECHANICAL, 2000, "units", 500, 3L);
-        createSupply("Pressure Valves", Supply.SupplyCategory.MECHANICAL, 25, "units", 30, 3L); // Low stock
+        createSupply("Pressure Valves", Supply.SupplyCategory.MECHANICAL, 75, "units", 30, 3L);
         
-        // ELECTRONIC supplies
+        // ELECTRONIC supplies - All well-stocked
         createSupply("Circuit Boards", Supply.SupplyCategory.ELECTRONIC, 100, "units", 40, 4L);
         createSupply("Power Regulators", Supply.SupplyCategory.ELECTRONIC, 45, "units", 20, 4L);
         createSupply("Sensor Arrays", Supply.SupplyCategory.ELECTRONIC, 30, "units", 15, 4L);
         createSupply("Data Cables", Supply.SupplyCategory.ELECTRONIC, 500, "meters", 100, 4L);
-        createSupply("Backup Processors", Supply.SupplyCategory.ELECTRONIC, 8, "units", 10, 4L); // Low stock
+        createSupply("Backup Processors", Supply.SupplyCategory.ELECTRONIC, 25, "units", 10, 4L);
         
-        // FUEL supplies
+        // FUEL supplies - All well-stocked
         createSupply("Hydrogen Fuel Cells", Supply.SupplyCategory.FUEL, 200, "cells", 50, 5L);
         createSupply("Thruster Propellant", Supply.SupplyCategory.FUEL, 5000, "liters", 1000, 5L);
         createSupply("Fusion Reactor Fuel", Supply.SupplyCategory.FUEL, 150, "rods", 50, 5L);
-        createSupply("Emergency Fuel Reserve", Supply.SupplyCategory.FUEL, 1000, "liters", 500, 5L);
+        createSupply("Emergency Fuel Reserve", Supply.SupplyCategory.FUEL, 1500, "liters", 500, 5L);
         
-        // WATER supplies
+        // WATER supplies - All well-stocked
         createSupply("Potable Water", Supply.SupplyCategory.WATER, 10000, "liters", 3000, 6L);
         createSupply("Water Purification Tablets", Supply.SupplyCategory.WATER, 5000, "tablets", 1000, 6L);
-        createSupply("Water Recycler Filters", Supply.SupplyCategory.WATER, 40, "units", 20, 6L);
+        createSupply("Water Recycler Filters", Supply.SupplyCategory.WATER, 50, "units", 20, 6L);
         
-        // OXYGEN supplies
+        // OXYGEN supplies - All well-stocked
         createSupply("Oxygen Canisters", Supply.SupplyCategory.OXYGEN, 300, "canisters", 100, 7L);
         createSupply("CO2 Scrubber Cartridges", Supply.SupplyCategory.OXYGEN, 120, "units", 50, 7L);
         createSupply("Emergency Oxygen Masks", Supply.SupplyCategory.OXYGEN, 200, "units", 80, 7L);
         
-        // GENERAL supplies
+        // GENERAL supplies - All well-stocked
         createSupply("EVA Suit Components", Supply.SupplyCategory.GENERAL, 50, "sets", 20, 8L);
         createSupply("Tool Kits", Supply.SupplyCategory.GENERAL, 30, "kits", 15, 8L);
         

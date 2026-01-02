@@ -6,6 +6,7 @@ import com.nexus.docking.entity.Ship;
 import com.nexus.docking.repository.DockingBayRepository;
 import com.nexus.docking.repository.DockingLogRepository;
 import com.nexus.docking.repository.ShipRepository;
+import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -24,13 +25,16 @@ public class DataInitializer implements ApplicationRunner {
     private final DockingBayRepository bayRepository;
     private final ShipRepository shipRepository;
     private final DockingLogRepository logRepository;
+    private final EntityManager entityManager;
     
     public DataInitializer(DockingBayRepository bayRepository, 
                           ShipRepository shipRepository,
-                          DockingLogRepository logRepository) {
+                          DockingLogRepository logRepository,
+                          EntityManager entityManager) {
         this.bayRepository = bayRepository;
         this.shipRepository = shipRepository;
         this.logRepository = logRepository;
+        this.entityManager = entityManager;
     }
     
     @Override
@@ -53,6 +57,29 @@ public class DataInitializer implements ApplicationRunner {
         }
         
         log.info("Docking Service demo data check complete");
+    }
+    
+    /**
+     * Resets all tables and re-initializes demo data.
+     */
+    @Transactional
+    public void resetTables() {
+        log.info("Resetting Docking Service tables...");
+        
+        // Delete in order respecting foreign key constraints (batch delete)
+        logRepository.deleteAllInBatch();
+        bayRepository.deleteAllInBatch();
+        shipRepository.deleteAllInBatch();
+        
+        // Flush to ensure deletes are committed before inserts
+        entityManager.flush();
+        entityManager.clear();
+        
+        // Re-initialize demo data
+        initializeShips();
+        initializeDockingBays();
+        
+        log.info("Docking Service tables reset complete");
     }
     
     private void initializeShips() {

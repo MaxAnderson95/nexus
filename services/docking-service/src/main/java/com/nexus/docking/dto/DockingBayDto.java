@@ -9,16 +9,22 @@ public record DockingBayDto(
     Integer bayNumber,
     String status,
     Long currentShipId,
+    String currentShipName,
     Integer capacity,
     Instant createdAt,
     Instant updatedAt
 ) {
     public static DockingBayDto fromEntity(DockingBay bay) {
+        return fromEntity(bay, null);
+    }
+    
+    public static DockingBayDto fromEntity(DockingBay bay, String shipName) {
         return new DockingBayDto(
             bay.getId(),
             bay.getBayNumber(),
             bay.getStatus().name(),
             bay.getCurrentShipId(),
+            shipName,
             bay.getCapacity(),
             bay.getCreatedAt(),
             bay.getUpdatedAt()

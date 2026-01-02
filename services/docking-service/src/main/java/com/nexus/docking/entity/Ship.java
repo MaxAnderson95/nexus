@@ -31,6 +31,9 @@ public class Ship {
     @Column(name = "arrival_time")
     private Instant arrivalTime;
     
+    @Column(name = "departure_time")
+    private Instant departureTime;
+    
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
     
@@ -103,6 +106,14 @@ public class Ship {
     
     public void setArrivalTime(Instant arrivalTime) {
         this.arrivalTime = arrivalTime;
+    }
+    
+    public Instant getDepartureTime() {
+        return departureTime;
+    }
+    
+    public void setDepartureTime(Instant departureTime) {
+        this.departureTime = departureTime;
     }
     
     public Instant getCreatedAt() {

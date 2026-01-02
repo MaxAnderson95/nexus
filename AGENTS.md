@@ -1,7 +1,9 @@
 # AGENTS.md - Coding Agent Guidelines for NEXUS Station
 
 ## Project Overview
+
 Microservices-based space station management system demonstrating OpenTelemetry distributed tracing.
+
 - **Backend**: Java 17, Spring Boot 3.4.1
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS
 - **Database**: PostgreSQL 16 with schema-per-service
@@ -10,6 +12,7 @@ Microservices-based space station management system demonstrating OpenTelemetry 
 ## Build & Test Commands
 
 ### Java Services (Maven)
+
 ```bash
 # Build a single service (from service directory)
 ./mvnw clean package
@@ -31,6 +34,9 @@ Microservices-based space station management system demonstrating OpenTelemetry 
 ```
 
 ### Frontend (npm)
+
+Use NVM to get access to the correct Node version (v20.x):
+
 ```bash
 cd cortex/frontend
 
@@ -42,6 +48,7 @@ npm run preview      # Preview production build
 ```
 
 ### Docker Compose
+
 ```bash
 docker compose up -d --build              # Start all services
 docker compose --profile load up -d       # Include load generator
@@ -54,6 +61,7 @@ docker compose down                        # Stop all services
 ### Java
 
 **Package Structure:**
+
 ```
 com.nexus.<service>/
 ├── client/          # REST clients for other services
@@ -67,6 +75,7 @@ com.nexus.<service>/
 ```
 
 **Naming Conventions:**
+
 - Controllers: `*Controller` (e.g., `CrewController`)
 - Services: `*Service` (e.g., `CrewService`)
 - Repositories: `*Repository` (e.g., `CrewMemberRepository`)
@@ -75,6 +84,7 @@ com.nexus.<service>/
 - Clients: `*Client` (e.g., `PowerClient`)
 
 **DTOs - Use Java Records:**
+
 ```java
 public record CrewMemberDto(
     Long id,
@@ -89,6 +99,7 @@ public record CrewMemberDto(
 ```
 
 **Exception Handling:**
+
 ```java
 // Define as static inner classes in Service
 public static class CrewNotFoundException extends RuntimeException {
@@ -104,10 +115,12 @@ public ResponseEntity<Map<String, String>> handleNotFound(...) {
 ```
 
 **Dependency Injection:**
+
 - Use constructor injection (no `@Autowired` on constructors)
 - Use `@Value` for configuration properties
 
 **Logging:**
+
 ```java
 private static final Logger log = LoggerFactory.getLogger(ClassName.class);
 ```
@@ -115,11 +128,13 @@ private static final Logger log = LoggerFactory.getLogger(ClassName.class);
 ### TypeScript/React
 
 **Import Order:**
+
 1. React hooks (`useState`, `useEffect`)
 2. Local imports (api, types)
 3. Type imports with `type` keyword
 
 **Component Pattern:**
+
 ```typescript
 import { useState, useEffect } from 'react';
 import { api } from '../api/client';
@@ -157,21 +172,23 @@ function Crew() {
 ```
 
 **Styling:**
+
 - **Theme:** Cinematic Sci-Fi (Dark mode default)
 - **Framework:** Tailwind CSS + Framer Motion (animations) + Lucide React (icons)
 - **Colors:** Custom 'space' palette (deep blues/blacks), Cyan/Emerald/Red accents for status
 - **Typography:** 'Rajdhani' (headings), 'Share Tech Mono' (data/code)
 - **Components:** Use `Card` from `components/ui/Card.tsx` for consistency
 
-
 ## Architecture Patterns
 
 ### Service Communication
+
 - Services communicate via REST through CORTEX (BFF)
 - Use `RestClient` for service-to-service calls
 - Graceful degradation: warn and continue on non-critical failures
 
 ### Error Handling Strategy
+
 ```java
 // Critical operations - fail fast
 try {
@@ -189,7 +206,9 @@ try {
 ```
 
 ### Chaos Engineering
+
 Chaos settings affect all endpoints via `ChaosInterceptor`:
+
 - `none`: 0% errors, 0ms latency
 - `low`: 5% errors, 200-500ms latency
 - `medium`: 15% errors, 1-3s latency
@@ -198,6 +217,7 @@ Chaos settings affect all endpoints via `ChaosInterceptor`:
 Set via environment: `CHAOS_DEFAULT=low` or per-service: `POWER_CHAOS=high`
 
 ## Service Ports
+
 | Service | Port |
 |---------|------|
 | CORTEX (BFF + Frontend) | 8080 |
@@ -207,7 +227,18 @@ Set via environment: `CHAOS_DEFAULT=low` or per-service: `POWER_CHAOS=high`
 | Power | 8084 |
 | Inventory | 8085 |
 
+## Service Dependencies
+
+| Service | Depends On | Purpose |
+|---------|------------|---------|
+| Power | - | Base service (no dependencies) |
+| Life Support | Power | Power allocation for environmental systems |
+| Crew | Life Support | Section capacity adjustments when crew relocates |
+| Docking | Power, Crew | Bay power allocation, crew notifications |
+| Inventory | Docking, Crew | Cargo manifest linking, crew for cargo handling |
+
 ## Important Files
+
 - `docker-compose.yml` - Local development environment
 - `cortex/frontend/src/types/index.ts` - Frontend type definitions
 - `cortex/frontend/src/api/client.ts` - API client
@@ -217,6 +248,7 @@ Set via environment: `CHAOS_DEFAULT=low` or per-service: `POWER_CHAOS=high`
 ## Common Tasks
 
 ### Adding a New Endpoint
+
 1. Add method to service class
 2. Add endpoint to controller
 3. Add client method in CORTEX
@@ -226,6 +258,7 @@ Set via environment: `CHAOS_DEFAULT=low` or per-service: `POWER_CHAOS=high`
 7. Update load generator if interactive
 
 ### Adding Interactive UI Feature
+
 1. Add state for modal/loading
 2. Add handler function with try/catch
 3. Add UI components (button, modal)

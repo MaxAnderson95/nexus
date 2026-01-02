@@ -71,10 +71,12 @@ public class ChaosConfig implements WebMvcConfigurer {
                 }
             }
             
+            // Maybe throw error
             if (random.nextDouble() < config.errorRate()) {
                 String errorMessage = ERROR_MESSAGES[random.nextInt(ERROR_MESSAGES.length)];
-                log.warn("Chaos: Injecting error - {}", errorMessage);
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Chaos: " + errorMessage);
+                log.warn("Chaos Engineering: Injecting error - {}", errorMessage);
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+                        "[Chaos Engineering] " + errorMessage);
             }
             
             return true;

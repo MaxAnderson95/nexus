@@ -21,7 +21,7 @@ spec:
           image: {{ include "nexus-station.image" (dict "root" . "image" .Values.loadGenerator.image) }}
           imagePullPolicy: {{ .Values.loadGenerator.image.pullPolicy }}
           env:
-            - name: TARGET_HOST
+            - name: LOCUST_HOST
               value: "http://{{ include "nexus-station.fullname" . }}-cortex:{{ .Values.cortex.service.port }}"
             - name: LOCUST_USERS
               value: {{ .Values.loadGenerator.users | quote }}

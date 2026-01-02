@@ -2,8 +2,10 @@ package com.nexus.crew.config;
 
 import com.nexus.crew.entity.CrewMember;
 import com.nexus.crew.entity.Section;
+import com.nexus.crew.repository.CrewAssignmentRepository;
 import com.nexus.crew.repository.CrewMemberRepository;
 import com.nexus.crew.repository.SectionRepository;
+import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -23,12 +25,18 @@ public class DataInitializer implements ApplicationRunner {
     
     private final SectionRepository sectionRepository;
     private final CrewMemberRepository crewMemberRepository;
+    private final CrewAssignmentRepository crewAssignmentRepository;
+    private final EntityManager entityManager;
     private final Random random = new Random();
     
     public DataInitializer(SectionRepository sectionRepository,
-                          CrewMemberRepository crewMemberRepository) {
+                          CrewMemberRepository crewMemberRepository,
+                          CrewAssignmentRepository crewAssignmentRepository,
+                          EntityManager entityManager) {
         this.sectionRepository = sectionRepository;
         this.crewMemberRepository = crewMemberRepository;
+        this.crewAssignmentRepository = crewAssignmentRepository;
+        this.entityManager = entityManager;
     }
     
     @Override
@@ -51,6 +59,29 @@ public class DataInitializer implements ApplicationRunner {
         }
         
         log.info("Crew Service demo data check complete");
+    }
+    
+    /**
+     * Resets all tables and re-initializes demo data.
+     */
+    @Transactional
+    public void resetTables() {
+        log.info("Resetting Crew Service tables...");
+        
+        // Delete in order respecting foreign key constraints (batch delete)
+        crewAssignmentRepository.deleteAllInBatch();
+        crewMemberRepository.deleteAllInBatch();
+        sectionRepository.deleteAllInBatch();
+        
+        // Flush to ensure deletes are committed before inserts
+        entityManager.flush();
+        entityManager.clear();
+        
+        // Re-initialize demo data
+        initializeSections();
+        initializeCrewMembers();
+        
+        log.info("Crew Service tables reset complete");
     }
     
     private void initializeSections() {

@@ -3,7 +3,9 @@ package com.nexus.power.config;
 import com.nexus.power.entity.PowerAllocation;
 import com.nexus.power.entity.PowerSource;
 import com.nexus.power.repository.PowerAllocationRepository;
+import com.nexus.power.repository.PowerLogRepository;
 import com.nexus.power.repository.PowerSourceRepository;
+import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -18,11 +20,17 @@ public class DataInitializer implements ApplicationRunner {
     
     private final PowerSourceRepository sourceRepository;
     private final PowerAllocationRepository allocationRepository;
+    private final PowerLogRepository logRepository;
+    private final EntityManager entityManager;
     
     public DataInitializer(PowerSourceRepository sourceRepository, 
-                          PowerAllocationRepository allocationRepository) {
+                          PowerAllocationRepository allocationRepository,
+                          PowerLogRepository logRepository,
+                          EntityManager entityManager) {
         this.sourceRepository = sourceRepository;
         this.allocationRepository = allocationRepository;
+        this.logRepository = logRepository;
+        this.entityManager = entityManager;
     }
     
     @Override
@@ -47,50 +55,73 @@ public class DataInitializer implements ApplicationRunner {
         log.info("Power Service demo data check complete");
     }
     
+    /**
+     * Resets all tables and re-initializes demo data.
+     */
+    @Transactional
+    public void resetTables() {
+        log.info("Resetting Power Service tables...");
+        
+        // Delete in order respecting foreign key constraints (batch delete)
+        logRepository.deleteAllInBatch();
+        allocationRepository.deleteAllInBatch();
+        sourceRepository.deleteAllInBatch();
+        
+        // Flush to ensure deletes are committed before inserts
+        entityManager.flush();
+        entityManager.clear();
+        
+        // Re-initialize demo data
+        initializePowerSources();
+        initializePowerAllocations();
+        
+        log.info("Power Service tables reset complete");
+    }
+    
     private void initializePowerSources() {
-        // Solar Array Alpha
+        // Solar Array Alpha - High capacity for demo stability
         PowerSource solarAlpha = new PowerSource();
         solarAlpha.setName("Solar Array Alpha");
         solarAlpha.setType(PowerSource.PowerSourceType.SOLAR_ARRAY);
-        solarAlpha.setMaxOutputKw(500.0);
-        solarAlpha.setCurrentOutputKw(450.0);
+        solarAlpha.setMaxOutputKw(5000.0);
+        solarAlpha.setCurrentOutputKw(4500.0);
         solarAlpha.setStatus(PowerSource.PowerSourceStatus.ONLINE);
         sourceRepository.save(solarAlpha);
         
-        // Solar Array Beta
+        // Solar Array Beta - High capacity for demo stability
         PowerSource solarBeta = new PowerSource();
         solarBeta.setName("Solar Array Beta");
         solarBeta.setType(PowerSource.PowerSourceType.SOLAR_ARRAY);
-        solarBeta.setMaxOutputKw(500.0);
-        solarBeta.setCurrentOutputKw(480.0);
+        solarBeta.setMaxOutputKw(5000.0);
+        solarBeta.setCurrentOutputKw(4800.0);
         solarBeta.setStatus(PowerSource.PowerSourceStatus.ONLINE);
         sourceRepository.save(solarBeta);
         
-        // Fusion Reactor Core
+        // Fusion Reactor Core - Primary power source with massive capacity
         PowerSource fusionReactor = new PowerSource();
         fusionReactor.setName("Fusion Reactor Core");
         fusionReactor.setType(PowerSource.PowerSourceType.FUSION_REACTOR);
-        fusionReactor.setMaxOutputKw(2000.0);
-        fusionReactor.setCurrentOutputKw(1800.0);
+        fusionReactor.setMaxOutputKw(50000.0);
+        fusionReactor.setCurrentOutputKw(45000.0);
         fusionReactor.setStatus(PowerSource.PowerSourceStatus.ONLINE);
         sourceRepository.save(fusionReactor);
         
-        // Emergency Battery Bank
+        // Emergency Battery Bank - Standby reserve
         PowerSource batteryBank = new PowerSource();
         batteryBank.setName("Emergency Battery Bank");
         batteryBank.setType(PowerSource.PowerSourceType.BATTERY_BANK);
-        batteryBank.setMaxOutputKw(300.0);
+        batteryBank.setMaxOutputKw(10000.0);
         batteryBank.setCurrentOutputKw(0.0);
-        batteryBank.setStatus(PowerSource.PowerSourceStatus.OFFLINE);
+        batteryBank.setStatus(PowerSource.PowerSourceStatus.STANDBY);
         sourceRepository.save(batteryBank);
         
-        // Fuel Cell Array
+        // Fuel Cell Array - Online and contributing
         PowerSource fuelCell = new PowerSource();
         fuelCell.setName("Fuel Cell Array");
         fuelCell.setType(PowerSource.PowerSourceType.FUEL_CELL);
-        fuelCell.setMaxOutputKw(200.0);
-        fuelCell.setCurrentOutputKw(150.0);
-        fuelCell.setStatus(PowerSource.PowerSourceStatus.DEGRADED);
+        fuelCell.setMaxOutputKw(8000.0);
+        fuelCell.setCurrentOutputKw(7000.0);
+        fuelCell.setStatus(PowerSource.PowerSourceStatus.ONLINE);
         sourceRepository.save(fuelCell);
         
         log.info("Created 5 power sources");
