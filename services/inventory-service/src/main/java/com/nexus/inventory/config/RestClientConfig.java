@@ -1,4 +1,4 @@
-package com.nexus.cortex.config;
+package com.nexus.inventory.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

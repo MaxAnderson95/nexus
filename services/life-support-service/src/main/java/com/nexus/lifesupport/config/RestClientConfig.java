@@ -1,4 +1,4 @@
-package com.nexus.cortex.config;
+package com.nexus.lifesupport.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
