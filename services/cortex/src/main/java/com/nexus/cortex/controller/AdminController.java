@@ -19,7 +19,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/api/v1/admin")
 public class AdminController {
     
     private static final Logger log = LoggerFactory.getLogger(AdminController.class);
@@ -102,7 +102,7 @@ public class AdminController {
             try {
                 log.info("Resetting tables for {} at {}", serviceName, serviceUrl);
                 Map<String, Object> result = restClient.post()
-                        .uri(serviceUrl + "/api/admin/resetTables")
+                        .uri(serviceUrl + "/api/v1/admin/resetTables")
                         .retrieve()
                         .body(new ParameterizedTypeReference<>() {});
                 

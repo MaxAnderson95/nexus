@@ -33,17 +33,17 @@ public class InventoryClient {
         
         try {
             List<Map<String, Object>> supplies = restClient.get()
-                    .uri("/api/inventory/supplies")
+                    .uri("/api/v1/inventory/supplies")
                     .retrieve()
                     .body(new ParameterizedTypeReference<>() {});
             
             List<Map<String, Object>> resupplyRequests = restClient.get()
-                    .uri("/api/inventory/resupply-requests")
+                    .uri("/api/v1/inventory/resupply-requests")
                     .retrieve()
                     .body(new ParameterizedTypeReference<>() {});
             
             List<Map<String, Object>> manifests = restClient.get()
-                    .uri("/api/inventory/cargo-manifests")
+                    .uri("/api/v1/inventory/cargo-manifests")
                     .retrieve()
                     .body(new ParameterizedTypeReference<>() {});
             
@@ -98,7 +98,7 @@ public class InventoryClient {
     public Map<String, Object> getInventoryStatus() {
         log.debug("Fetching inventory status");
         return restClient.get()
-                .uri("/api/inventory")
+                .uri("/api/v1/inventory")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -106,7 +106,7 @@ public class InventoryClient {
     public List<Map<String, Object>> getAllSupplies() {
         log.debug("Fetching all supplies");
         return restClient.get()
-                .uri("/api/inventory/supplies")
+                .uri("/api/v1/inventory/supplies")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -114,7 +114,7 @@ public class InventoryClient {
     public Map<String, Object> getSupplyById(Long id) {
         log.debug("Fetching supply: {}", id);
         return restClient.get()
-                .uri("/api/inventory/supplies/{id}", id)
+                .uri("/api/v1/inventory/supplies/{id}", id)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -122,7 +122,7 @@ public class InventoryClient {
     public List<Map<String, Object>> getLowStockSupplies() {
         log.debug("Fetching low stock supplies");
         return restClient.get()
-                .uri("/api/inventory/supplies/low-stock")
+                .uri("/api/v1/inventory/supplies/low-stock")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -130,7 +130,7 @@ public class InventoryClient {
     public Map<String, Object> getLowStockCount() {
         log.debug("Fetching low stock count");
         return restClient.get()
-                .uri("/api/inventory/supplies/low-stock/count")
+                .uri("/api/v1/inventory/supplies/low-stock/count")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -138,7 +138,7 @@ public class InventoryClient {
     public Map<String, Object> consumeSupply(Map<String, Object> request) {
         log.info("Consuming supply: {}", request);
         return restClient.post()
-                .uri("/api/inventory/consume")
+                .uri("/api/v1/inventory/consume")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
                 .retrieve()
@@ -148,7 +148,7 @@ public class InventoryClient {
     public Map<String, Object> requestResupply(Map<String, Object> request) {
         log.info("Requesting resupply: {}", request);
         return restClient.post()
-                .uri("/api/inventory/resupply")
+                .uri("/api/v1/inventory/resupply")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
                 .retrieve()
@@ -158,7 +158,7 @@ public class InventoryClient {
     public List<Map<String, Object>> getResupplyRequests() {
         log.debug("Fetching resupply requests");
         return restClient.get()
-                .uri("/api/inventory/resupply-requests")
+                .uri("/api/v1/inventory/resupply-requests")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -166,7 +166,7 @@ public class InventoryClient {
     public List<Map<String, Object>> getCargoManifests() {
         log.debug("Fetching cargo manifests");
         return restClient.get()
-                .uri("/api/inventory/cargo-manifests")
+                .uri("/api/v1/inventory/cargo-manifests")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -174,7 +174,7 @@ public class InventoryClient {
     public Map<String, Object> getCargoManifestById(Long id) {
         log.debug("Fetching cargo manifest: {}", id);
         return restClient.get()
-                .uri("/api/inventory/cargo-manifests/{id}", id)
+                .uri("/api/v1/inventory/cargo-manifests/{id}", id)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -182,7 +182,7 @@ public class InventoryClient {
     public Map<String, Object> unloadManifest(Long id) {
         log.info("Unloading manifest: {}", id);
         return restClient.post()
-                .uri("/api/inventory/cargo-manifests/{id}/unload", id)
+                .uri("/api/v1/inventory/cargo-manifests/{id}/unload", id)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }

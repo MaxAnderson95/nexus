@@ -10,7 +10,7 @@ import java.util.Map;
 import static com.nexus.cortex.validation.RequestValidator.*;
 
 @RestController
-@RequestMapping("/api/inventory")
+@RequestMapping("/api/v1/inventory")
 public class InventoryProxyController {
 
     private final InventoryClient inventoryClient;

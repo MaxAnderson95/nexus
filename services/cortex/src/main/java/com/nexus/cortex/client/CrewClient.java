@@ -33,7 +33,7 @@ public class CrewClient {
         
         try {
             Map<String, Object> summary = restClient.get()
-                    .uri("/api/crew/count")
+                    .uri("/api/v1/crew/count")
                     .retrieve()
                     .body(new ParameterizedTypeReference<>() {});
             
@@ -67,7 +67,7 @@ public class CrewClient {
     public List<Map<String, Object>> getAllCrew() {
         log.debug("Fetching all crew");
         return restClient.get()
-                .uri("/api/crew")
+                .uri("/api/v1/crew")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -75,7 +75,7 @@ public class CrewClient {
     public Map<String, Object> getCrewCount() {
         log.debug("Fetching crew count");
         return restClient.get()
-                .uri("/api/crew/count")
+                .uri("/api/v1/crew/count")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -83,7 +83,7 @@ public class CrewClient {
     public Map<String, Object> getCrewById(Long id) {
         log.debug("Fetching crew member: {}", id);
         return restClient.get()
-                .uri("/api/crew/{id}", id)
+                .uri("/api/v1/crew/{id}", id)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -91,7 +91,7 @@ public class CrewClient {
     public List<Map<String, Object>> getCrewBySection(Long sectionId) {
         log.debug("Fetching crew by section: {}", sectionId);
         return restClient.get()
-                .uri("/api/crew/section/{sectionId}", sectionId)
+                .uri("/api/v1/crew/section/{sectionId}", sectionId)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -99,7 +99,7 @@ public class CrewClient {
     public List<Map<String, Object>> getAvailableCrew() {
         log.debug("Fetching available crew");
         return restClient.get()
-                .uri("/api/crew/available")
+                .uri("/api/v1/crew/available")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -107,7 +107,7 @@ public class CrewClient {
     public Map<String, Object> relocateCrew(Map<String, Object> request) {
         log.info("Relocating crew: {}", request);
         return restClient.post()
-                .uri("/api/crew/relocate")
+                .uri("/api/v1/crew/relocate")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
                 .retrieve()
@@ -117,7 +117,7 @@ public class CrewClient {
     public List<Map<String, Object>> registerArrival(Map<String, Object> request) {
         log.info("Registering crew arrival: {}", request);
         return restClient.post()
-                .uri("/api/crew/arrival")
+                .uri("/api/v1/crew/arrival")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
                 .retrieve()
@@ -127,7 +127,7 @@ public class CrewClient {
     public List<Map<String, Object>> getAllSections() {
         log.debug("Fetching all sections");
         return restClient.get()
-                .uri("/api/crew/sections")
+                .uri("/api/v1/crew/sections")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -135,7 +135,7 @@ public class CrewClient {
     public Map<String, Object> getSectionById(Long id) {
         log.debug("Fetching section: {}", id);
         return restClient.get()
-                .uri("/api/crew/sections/{id}", id)
+                .uri("/api/v1/crew/sections/{id}", id)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }

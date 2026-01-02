@@ -10,7 +10,7 @@ import java.util.Map;
 import static com.nexus.cortex.validation.RequestValidator.*;
 
 @RestController
-@RequestMapping("/api/power")
+@RequestMapping("/api/v1/power")
 public class PowerProxyController {
 
     private final PowerClient powerClient;

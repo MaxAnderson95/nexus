@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/docking")
+@RequestMapping("/api/v1/docking")
 public class DockingController {
     
     private final DockingService dockingService;

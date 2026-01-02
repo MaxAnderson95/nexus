@@ -38,7 +38,7 @@ public class InventoryClient {
 
         try {
             var response = restClient.post()
-                    .uri("/api/inventory/cargo-manifests/unload-by-ship/{shipId}", shipId)
+                    .uri("/api/v1/inventory/cargo-manifests/unload-by-ship/{shipId}", shipId)
                     .retrieve()
                     .body(new ParameterizedTypeReference<List<UnloadedManifest>>() {});
 

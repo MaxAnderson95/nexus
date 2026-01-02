@@ -33,7 +33,7 @@ public class LifeSupportClient {
         
         try {
             Map<String, Object> summary = restClient.get()
-                    .uri("/api/life-support/environment/summary")
+                    .uri("/api/v1/life-support/environment/summary")
                     .retrieve()
                     .body(new ParameterizedTypeReference<>() {});
             
@@ -75,7 +75,7 @@ public class LifeSupportClient {
     public List<Map<String, Object>> getAllEnvironment() {
         log.debug("Fetching all environment status");
         return restClient.get()
-                .uri("/api/life-support/environment")
+                .uri("/api/v1/life-support/environment")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -83,7 +83,7 @@ public class LifeSupportClient {
     public Map<String, Object> getEnvironmentSummary() {
         log.debug("Fetching environment summary");
         return restClient.get()
-                .uri("/api/life-support/environment/summary")
+                .uri("/api/v1/life-support/environment/summary")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -91,7 +91,7 @@ public class LifeSupportClient {
     public Map<String, Object> getSectionEnvironment(Long sectionId) {
         log.debug("Fetching section environment: {}", sectionId);
         return restClient.get()
-                .uri("/api/life-support/environment/section/{sectionId}", sectionId)
+                .uri("/api/v1/life-support/environment/section/{sectionId}", sectionId)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -99,7 +99,7 @@ public class LifeSupportClient {
     public Map<String, Object> adjustEnvironment(Long sectionId, Map<String, Object> request) {
         log.info("Adjusting environment for section {}: {}", sectionId, request);
         return restClient.post()
-                .uri("/api/life-support/environment/section/{sectionId}/adjust", sectionId)
+                .uri("/api/v1/life-support/environment/section/{sectionId}/adjust", sectionId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
                 .retrieve()
@@ -109,7 +109,7 @@ public class LifeSupportClient {
     public Map<String, Object> adjustCapacity(Map<String, Object> request) {
         log.info("Adjusting life support capacity: {}", request);
         return restClient.post()
-                .uri("/api/life-support/adjust-capacity")
+                .uri("/api/v1/life-support/adjust-capacity")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
                 .retrieve()
@@ -119,7 +119,7 @@ public class LifeSupportClient {
     public List<Map<String, Object>> getAlerts() {
         log.debug("Fetching active alerts");
         return restClient.get()
-                .uri("/api/life-support/alerts")
+                .uri("/api/v1/life-support/alerts")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -127,7 +127,7 @@ public class LifeSupportClient {
     public List<Map<String, Object>> getAllAlerts() {
         log.debug("Fetching all alerts");
         return restClient.get()
-                .uri("/api/life-support/alerts/all")
+                .uri("/api/v1/life-support/alerts/all")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -135,7 +135,7 @@ public class LifeSupportClient {
     public Map<String, Object> acknowledgeAlert(Long alertId) {
         log.info("Acknowledging alert: {}", alertId);
         return restClient.post()
-                .uri("/api/life-support/alerts/{alertId}/acknowledge", alertId)
+                .uri("/api/v1/life-support/alerts/{alertId}/acknowledge", alertId)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -143,7 +143,7 @@ public class LifeSupportClient {
     public Map<String, Object> runSelfTest(Long sectionId) {
         log.info("Running self-test for section: {}", sectionId);
         return restClient.post()
-                .uri("/api/life-support/environment/section/{sectionId}/self-test", sectionId)
+                .uri("/api/v1/life-support/environment/section/{sectionId}/self-test", sectionId)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }

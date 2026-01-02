@@ -16,7 +16,7 @@ import type {
   ResetAllTablesResponse,
 } from '../types';
 
-const BASE_URL = '/api';
+const BASE_URL = '/api/v1';
 const TRACE_ID_HEADER = 'x-trace-id';
 
 class ApiError extends Error {

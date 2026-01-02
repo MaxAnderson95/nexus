@@ -43,7 +43,7 @@ public class DockingClient {
                     .plus(java.time.Duration.ofHours(24 + (long)(Math.random() * 24)));
 
             var response = restClient.post()
-                    .uri("/api/docking/schedule-delivery")
+                    .uri("/api/v1/docking/schedule-delivery")
                     .body(Map.of(
                             "shipName", shipName,
                             "cargoType", supplyName + " (" + quantity + " units)",

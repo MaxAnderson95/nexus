@@ -10,7 +10,7 @@ import java.util.Map;
 import static com.nexus.cortex.validation.RequestValidator.*;
 
 @RestController
-@RequestMapping("/api/docking")
+@RequestMapping("/api/v1/docking")
 public class DockingProxyController {
 
     private final DockingClient dockingClient;

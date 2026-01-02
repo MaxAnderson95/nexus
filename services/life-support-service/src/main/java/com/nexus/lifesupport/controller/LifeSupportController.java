@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/life-support")
+@RequestMapping("/api/v1/life-support")
 public class LifeSupportController {
     
     private final LifeSupportService lifeSupportService;

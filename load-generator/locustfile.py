@@ -2,7 +2,7 @@
 NEXUS Station Load Generator
 
 This Locust file simulates realistic user behavior for the space station
-management system. All requests go through the CORTEX BFF at /api/*.
+management system. All requests go through the CORTEX BFF at /api/v1/*.
 
 Features tested:
 - Dashboard: full status and individual summaries
@@ -23,8 +23,8 @@ class DashboardBehavior(SequentialTaskSet):
     @task
     def load_dashboard(self):
         """Load aggregated dashboard status"""
-        with self.client.get("/api/dashboard/status",
-                            name="/api/dashboard/status",
+        with self.client.get("/api/v1/dashboard/status",
+                            name="/api/v1/dashboard/status",
                             catch_response=True) as response:
             if response.status_code == 200:
                 response.success()
@@ -34,27 +34,27 @@ class DashboardBehavior(SequentialTaskSet):
     @task
     def load_docking_summary(self):
         """Load docking summary"""
-        self.client.get("/api/dashboard/docking", name="/api/dashboard/docking")
+        self.client.get("/api/v1/dashboard/docking", name="/api/v1/dashboard/docking")
 
     @task
     def load_crew_summary(self):
         """Load crew summary"""
-        self.client.get("/api/dashboard/crew", name="/api/dashboard/crew")
+        self.client.get("/api/v1/dashboard/crew", name="/api/v1/dashboard/crew")
 
     @task
     def load_life_support_summary(self):
         """Load life support summary"""
-        self.client.get("/api/dashboard/life-support", name="/api/dashboard/life-support")
+        self.client.get("/api/v1/dashboard/life-support", name="/api/v1/dashboard/life-support")
 
     @task
     def load_power_summary(self):
         """Load power summary"""
-        self.client.get("/api/dashboard/power", name="/api/dashboard/power")
+        self.client.get("/api/v1/dashboard/power", name="/api/v1/dashboard/power")
 
     @task
     def load_inventory_summary(self):
         """Load inventory summary"""
-        self.client.get("/api/dashboard/inventory", name="/api/dashboard/inventory")
+        self.client.get("/api/v1/dashboard/inventory", name="/api/v1/dashboard/inventory")
         self.interrupt()
 
 
@@ -64,50 +64,50 @@ class DockingBehavior(SequentialTaskSet):
     @task
     def view_bays(self):
         """View all docking bays"""
-        self.client.get("/api/docking/bays", name="/api/docking/bays")
+        self.client.get("/api/v1/docking/bays", name="/api/v1/docking/bays")
 
     @task
     def view_single_bay(self):
         """View a single docking bay"""
-        response = self.client.get("/api/docking/bays",
-                                   name="/api/docking/bays [bay detail prep]")
+        response = self.client.get("/api/v1/docking/bays",
+                                   name="/api/v1/docking/bays [bay detail prep]")
         if response.ok:
             bays = response.json()
             if bays and len(bays) > 0:
                 bay_id = random.choice(bays).get("id")
                 if bay_id:
-                    self.client.get(f"/api/docking/bays/{bay_id}",
-                                   name="/api/docking/bays/{id}")
+                    self.client.get(f"/api/v1/docking/bays/{bay_id}",
+                                   name="/api/v1/docking/bays/{id}")
 
     @task
     def view_all_ships(self):
         """View all ships"""
-        self.client.get("/api/docking/ships", name="/api/docking/ships")
+        self.client.get("/api/v1/docking/ships", name="/api/v1/docking/ships")
 
     @task
     def view_incoming(self):
         """View incoming ships"""
-        self.client.get("/api/docking/ships/incoming",
-                       name="/api/docking/ships/incoming")
+        self.client.get("/api/v1/docking/ships/incoming",
+                       name="/api/v1/docking/ships/incoming")
 
     @task
     def dock_ship(self):
         """Attempt to dock an incoming ship"""
-        response = self.client.get("/api/docking/ships/incoming",
-                                   name="/api/docking/ships/incoming [dock prep]")
+        response = self.client.get("/api/v1/docking/ships/incoming",
+                                   name="/api/v1/docking/ships/incoming [dock prep]")
         if response.ok:
             ships = response.json()
             if ships and len(ships) > 0:
                 ship_id = ships[0].get("id")
                 if ship_id:
-                    self.client.post(f"/api/docking/dock/{ship_id}",
-                                    name="/api/docking/dock/{id}")
+                    self.client.post(f"/api/v1/docking/dock/{ship_id}",
+                                    name="/api/v1/docking/dock/{id}")
 
     @task
     def undock_ship(self):
         """Attempt to undock a docked ship"""
-        response = self.client.get("/api/docking/bays",
-                                   name="/api/docking/bays [undock prep]")
+        response = self.client.get("/api/v1/docking/bays",
+                                   name="/api/v1/docking/bays [undock prep]")
         if response.ok:
             bays = response.json()
             occupied = [b for b in bays if b.get("status") == "OCCUPIED" and b.get("currentShipId")]
@@ -115,13 +115,13 @@ class DockingBehavior(SequentialTaskSet):
                 bay = random.choice(occupied)
                 ship_id = bay.get("currentShipId")
                 if ship_id:
-                    self.client.post(f"/api/docking/undock/{ship_id}",
-                                    name="/api/docking/undock/{id}")
+                    self.client.post(f"/api/v1/docking/undock/{ship_id}",
+                                    name="/api/v1/docking/undock/{id}")
 
     @task
     def view_logs(self):
         """View docking logs"""
-        self.client.get("/api/docking/logs", name="/api/docking/logs")
+        self.client.get("/api/v1/docking/logs", name="/api/v1/docking/logs")
         self.interrupt()
 
 
@@ -131,44 +131,44 @@ class CrewBehavior(SequentialTaskSet):
     @task
     def view_roster(self):
         """View full crew roster"""
-        self.client.get("/api/crew", name="/api/crew")
+        self.client.get("/api/v1/crew", name="/api/v1/crew")
 
     @task
     def view_single_member(self):
         """View a single crew member"""
-        response = self.client.get("/api/crew", name="/api/crew [member prep]")
+        response = self.client.get("/api/v1/crew", name="/api/v1/crew [member prep]")
         if response.ok:
             roster = response.json()
             if roster and len(roster) > 0:
                 member_id = random.choice(roster).get("id")
                 if member_id:
-                    self.client.get(f"/api/crew/{member_id}",
-                                   name="/api/crew/{id}")
+                    self.client.get(f"/api/v1/crew/{member_id}",
+                                   name="/api/v1/crew/{id}")
 
     @task
     def view_sections(self):
         """View station sections"""
-        self.client.get("/api/crew/sections", name="/api/crew/sections")
+        self.client.get("/api/v1/crew/sections", name="/api/v1/crew/sections")
 
     @task
     def view_section_members(self):
         """View members of a specific section"""
-        response = self.client.get("/api/crew/sections",
-                                   name="/api/crew/sections [members prep]")
+        response = self.client.get("/api/v1/crew/sections",
+                                   name="/api/v1/crew/sections [members prep]")
         if response.ok:
             sections = response.json()
             if sections and len(sections) > 0:
                 section_id = random.choice(sections).get("id")
                 if section_id:
-                    self.client.get(f"/api/crew/section/{section_id}",
-                                   name="/api/crew/section/{id}")
+                    self.client.get(f"/api/v1/crew/section/{section_id}",
+                                   name="/api/v1/crew/section/{id}")
 
     @task
     def relocate_crew(self):
         """Relocate a crew member to a different section"""
-        roster_resp = self.client.get("/api/crew", name="/api/crew [relocate prep]")
-        sections_resp = self.client.get("/api/crew/sections",
-                                        name="/api/crew/sections [relocate prep]")
+        roster_resp = self.client.get("/api/v1/crew", name="/api/v1/crew [relocate prep]")
+        sections_resp = self.client.get("/api/v1/crew/sections",
+                                        name="/api/v1/crew/sections [relocate prep]")
 
         if roster_resp.ok and sections_resp.ok:
             roster = roster_resp.json()
@@ -186,12 +186,12 @@ class CrewBehavior(SequentialTaskSet):
                                          and s.get("currentOccupancy", 0) < s.get("maxCapacity", 10)]
                     if available_sections:
                         target = random.choice(available_sections)
-                        self.client.post("/api/crew/relocate",
+                        self.client.post("/api/v1/crew/relocate",
                                         json={
                                             "crewId": crew_member.get("id"),
                                             "targetSectionId": target.get("id")
                                         },
-                                        name="/api/crew/relocate")
+                                        name="/api/v1/crew/relocate")
         self.interrupt()
 
 
@@ -201,27 +201,27 @@ class LifeSupportBehavior(SequentialTaskSet):
     @task
     def view_environment(self):
         """View environmental readings for all sections"""
-        self.client.get("/api/life-support/environment",
-                       name="/api/life-support/environment")
+        self.client.get("/api/v1/life-support/environment",
+                       name="/api/v1/life-support/environment")
 
     @task
     def view_single_section_environment(self):
         """View environmental readings for a single section"""
-        response = self.client.get("/api/life-support/environment",
-                                   name="/api/life-support/environment [section prep]")
+        response = self.client.get("/api/v1/life-support/environment",
+                                   name="/api/v1/life-support/environment [section prep]")
         if response.ok:
             sections = response.json()
             if sections and len(sections) > 0:
                 section_id = random.choice(sections).get("sectionId")
                 if section_id:
-                    self.client.get(f"/api/life-support/environment/section/{section_id}",
-                                   name="/api/life-support/environment/section/{id}")
+                    self.client.get(f"/api/v1/life-support/environment/section/{section_id}",
+                                   name="/api/v1/life-support/environment/section/{id}")
 
     @task
     def run_self_test(self):
         """Run self-test diagnostic on a section (2-3s delay)"""
-        response = self.client.get("/api/life-support/environment",
-                                   name="/api/life-support/environment [self-test prep]")
+        response = self.client.get("/api/v1/life-support/environment",
+                                   name="/api/v1/life-support/environment [self-test prep]")
         if response.ok:
             sections = response.json()
             if sections and len(sections) > 0:
@@ -230,8 +230,8 @@ class LifeSupportBehavior(SequentialTaskSet):
                 if section_id:
                     # Self-test has artificial 2-3s delay
                     with self.client.post(
-                        f"/api/life-support/environment/section/{section_id}/self-test",
-                        name="/api/life-support/environment/section/{id}/self-test",
+                        f"/api/v1/life-support/environment/section/{section_id}/self-test",
+                        name="/api/v1/life-support/environment/section/{id}/self-test",
                         catch_response=True,
                         timeout=10
                     ) as response:
@@ -247,8 +247,8 @@ class LifeSupportBehavior(SequentialTaskSet):
     @task
     def adjust_environment(self):
         """Adjust environmental settings for a section"""
-        response = self.client.get("/api/life-support/environment",
-                                   name="/api/life-support/environment [adjust prep]")
+        response = self.client.get("/api/v1/life-support/environment",
+                                   name="/api/v1/life-support/environment [adjust prep]")
         if response.ok:
             sections = response.json()
             if sections and len(sections) > 0:
@@ -256,18 +256,18 @@ class LifeSupportBehavior(SequentialTaskSet):
                 section_id = section.get("sectionId")
                 if section_id:
                     self.client.post(
-                        f"/api/life-support/environment/section/{section_id}/adjust",
+                        f"/api/v1/life-support/environment/section/{section_id}/adjust",
                         json={
                             "targetTemperature": round(random.uniform(18.0, 24.0), 1),
                             "targetO2": round(random.uniform(20.5, 21.5), 1)
                         },
-                        name="/api/life-support/environment/section/{id}/adjust")
+                        name="/api/v1/life-support/environment/section/{id}/adjust")
 
     @task
     def check_alerts(self):
         """Check and acknowledge alerts"""
-        response = self.client.get("/api/life-support/alerts",
-                                   name="/api/life-support/alerts")
+        response = self.client.get("/api/v1/life-support/alerts",
+                                   name="/api/v1/life-support/alerts")
         if response.ok:
             alerts = response.json()
             unacknowledged = [a for a in alerts if not a.get("acknowledged")]
@@ -276,8 +276,8 @@ class LifeSupportBehavior(SequentialTaskSet):
                 alert_id = alert.get("id")
                 if alert_id:
                     self.client.post(
-                        f"/api/life-support/alerts/{alert_id}/acknowledge",
-                        name="/api/life-support/alerts/{id}/acknowledge")
+                        f"/api/v1/life-support/alerts/{alert_id}/acknowledge",
+                        name="/api/v1/life-support/alerts/{id}/acknowledge")
         self.interrupt()
 
 
@@ -287,17 +287,17 @@ class PowerBehavior(SequentialTaskSet):
     @task
     def view_grid(self):
         """View power grid status"""
-        self.client.get("/api/power/grid", name="/api/power/grid")
+        self.client.get("/api/v1/power/grid", name="/api/v1/power/grid")
 
     @task
     def view_sources(self):
         """View power sources"""
-        self.client.get("/api/power/sources", name="/api/power/sources")
+        self.client.get("/api/v1/power/sources", name="/api/v1/power/sources")
 
     @task
     def view_allocations(self):
         """View current power allocations"""
-        self.client.get("/api/power/allocations", name="/api/power/allocations")
+        self.client.get("/api/v1/power/allocations", name="/api/v1/power/allocations")
 
     @task
     def allocate_power(self):
@@ -308,19 +308,19 @@ class PowerBehavior(SequentialTaskSet):
             "recreation", "hydroponics", "fabrication"
         ]
         system = f"{random.choice(systems)}_{random.randint(1, 5)}"
-        self.client.post("/api/power/allocate",
+        self.client.post("/api/v1/power/allocate",
                         json={
                             "system": system,
                             "amountKw": random.randint(20, 150),
                             "priority": random.randint(3, 8)
                         },
-                        name="/api/power/allocate")
+                        name="/api/v1/power/allocate")
 
     @task
     def deallocate_power(self):
         """Deallocate power from a system"""
-        response = self.client.get("/api/power/allocations",
-                                   name="/api/power/allocations [dealloc prep]")
+        response = self.client.get("/api/v1/power/allocations",
+                                   name="/api/v1/power/allocations [dealloc prep]")
         if response.ok:
             allocations = response.json()
             # Only deallocate lower priority systems (5+)
@@ -329,9 +329,9 @@ class PowerBehavior(SequentialTaskSet):
                 alloc = random.choice(deallocatable)
                 system_name = alloc.get("systemName")
                 if system_name:
-                    self.client.post("/api/power/deallocate",
+                    self.client.post("/api/v1/power/deallocate",
                                     json={"system": system_name},
-                                    name="/api/power/deallocate")
+                                    name="/api/v1/power/deallocate")
         self.interrupt()
 
 
@@ -341,32 +341,32 @@ class InventoryBehavior(SequentialTaskSet):
     @task
     def view_inventory(self):
         """View all supplies"""
-        self.client.get("/api/inventory/supplies", name="/api/inventory/supplies")
+        self.client.get("/api/v1/inventory/supplies", name="/api/v1/inventory/supplies")
 
     @task
     def view_single_supply(self):
         """View a single supply item"""
-        response = self.client.get("/api/inventory/supplies",
-                                   name="/api/inventory/supplies [detail prep]")
+        response = self.client.get("/api/v1/inventory/supplies",
+                                   name="/api/v1/inventory/supplies [detail prep]")
         if response.ok:
             supplies = response.json()
             if supplies and len(supplies) > 0:
                 supply_id = random.choice(supplies).get("id")
                 if supply_id:
-                    self.client.get(f"/api/inventory/supplies/{supply_id}",
-                                   name="/api/inventory/supplies/{id}")
+                    self.client.get(f"/api/v1/inventory/supplies/{supply_id}",
+                                   name="/api/v1/inventory/supplies/{id}")
 
     @task
     def view_low_stock(self):
         """View low stock items"""
-        self.client.get("/api/inventory/supplies/low-stock",
-                       name="/api/inventory/supplies/low-stock")
+        self.client.get("/api/v1/inventory/supplies/low-stock",
+                       name="/api/v1/inventory/supplies/low-stock")
 
     @task
     def consume_supplies(self):
         """Consume some supplies"""
-        response = self.client.get("/api/inventory/supplies",
-                                   name="/api/inventory/supplies [consume prep]")
+        response = self.client.get("/api/v1/inventory/supplies",
+                                   name="/api/v1/inventory/supplies [consume prep]")
         if response.ok:
             supplies = response.json()
             # Only consume from supplies with quantity > 10
@@ -376,18 +376,18 @@ class InventoryBehavior(SequentialTaskSet):
                 supply_id = supply.get("id")
                 max_consume = min(supply.get("quantity", 10), 20)
                 if supply_id:
-                    self.client.post("/api/inventory/consume",
+                    self.client.post("/api/v1/inventory/consume",
                                     json={
                                         "supplyId": supply_id,
                                         "quantity": random.randint(1, max_consume)
                                     },
-                                    name="/api/inventory/consume")
+                                    name="/api/v1/inventory/consume")
 
     @task
     def request_resupply(self):
         """Request resupply for items"""
-        response = self.client.get("/api/inventory/supplies",
-                                   name="/api/inventory/supplies [resupply prep]")
+        response = self.client.get("/api/v1/inventory/supplies",
+                                   name="/api/v1/inventory/supplies [resupply prep]")
         if response.ok:
             supplies = response.json()
             # Prefer low stock items but occasionally resupply others
@@ -402,30 +402,30 @@ class InventoryBehavior(SequentialTaskSet):
             item_id = item.get("id")
             min_threshold = item.get("minThreshold", 50)
             if item_id:
-                self.client.post("/api/inventory/resupply",
+                self.client.post("/api/v1/inventory/resupply",
                                 json={
                                     "supplyId": item_id,
                                     "quantity": random.randint(min_threshold, min_threshold * 3)
                                 },
-                                name="/api/inventory/resupply")
+                                name="/api/v1/inventory/resupply")
 
     @task
     def view_resupply_requests(self):
         """View resupply request status"""
-        self.client.get("/api/inventory/resupply-requests",
-                       name="/api/inventory/resupply-requests")
+        self.client.get("/api/v1/inventory/resupply-requests",
+                       name="/api/v1/inventory/resupply-requests")
 
     @task
     def view_manifests(self):
         """View cargo manifests"""
-        self.client.get("/api/inventory/cargo-manifests",
-                       name="/api/inventory/cargo-manifests")
+        self.client.get("/api/v1/inventory/cargo-manifests",
+                       name="/api/v1/inventory/cargo-manifests")
 
     @task
     def unload_manifests(self):
         """Unload pending cargo manifests"""
-        response = self.client.get("/api/inventory/cargo-manifests",
-                                   name="/api/inventory/cargo-manifests [unload prep]")
+        response = self.client.get("/api/v1/inventory/cargo-manifests",
+                                   name="/api/v1/inventory/cargo-manifests [unload prep]")
         if response.ok:
             manifests = response.json()
             pending = [m for m in manifests if m.get("status") == "PENDING"]
@@ -434,8 +434,8 @@ class InventoryBehavior(SequentialTaskSet):
                 manifest_id = manifest.get("id")
                 if manifest_id:
                     self.client.post(
-                        f"/api/inventory/cargo-manifests/{manifest_id}/unload",
-                        name="/api/inventory/cargo-manifests/{id}/unload")
+                        f"/api/v1/inventory/cargo-manifests/{manifest_id}/unload",
+                        name="/api/v1/inventory/cargo-manifests/{id}/unload")
         self.interrupt()
 
 

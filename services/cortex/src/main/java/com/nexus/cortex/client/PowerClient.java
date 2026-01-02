@@ -33,7 +33,7 @@ public class PowerClient {
         
         try {
             Map<String, Object> grid = restClient.get()
-                    .uri("/api/power/grid")
+                    .uri("/api/v1/power/grid")
                     .retrieve()
                     .body(new ParameterizedTypeReference<>() {});
             
@@ -75,7 +75,7 @@ public class PowerClient {
     public Map<String, Object> getPowerStatus() {
         log.debug("Fetching power status");
         return restClient.get()
-                .uri("/api/power")
+                .uri("/api/v1/power")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -83,7 +83,7 @@ public class PowerClient {
     public Map<String, Object> getGridStatus() {
         log.debug("Fetching grid status");
         return restClient.get()
-                .uri("/api/power/grid")
+                .uri("/api/v1/power/grid")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -91,7 +91,7 @@ public class PowerClient {
     public List<Map<String, Object>> getAllSources() {
         log.debug("Fetching all power sources");
         return restClient.get()
-                .uri("/api/power/sources")
+                .uri("/api/v1/power/sources")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -99,7 +99,7 @@ public class PowerClient {
     public Map<String, Object> getSourceById(Long id) {
         log.debug("Fetching power source: {}", id);
         return restClient.get()
-                .uri("/api/power/sources/{id}", id)
+                .uri("/api/v1/power/sources/{id}", id)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -107,7 +107,7 @@ public class PowerClient {
     public Map<String, Object> allocatePower(Map<String, Object> request) {
         log.info("Allocating power: {}", request);
         return restClient.post()
-                .uri("/api/power/allocate")
+                .uri("/api/v1/power/allocate")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
                 .retrieve()
@@ -117,7 +117,7 @@ public class PowerClient {
     public Map<String, Object> deallocatePower(Map<String, Object> request) {
         log.info("Deallocating power: {}", request);
         return restClient.post()
-                .uri("/api/power/deallocate")
+                .uri("/api/v1/power/deallocate")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
                 .retrieve()
@@ -127,7 +127,7 @@ public class PowerClient {
     public List<Map<String, Object>> getAllAllocations() {
         log.debug("Fetching all power allocations");
         return restClient.get()
-                .uri("/api/power/allocations")
+                .uri("/api/v1/power/allocations")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -135,7 +135,7 @@ public class PowerClient {
     public Map<String, Object> getAllocationBySystem(String system) {
         log.debug("Fetching power allocation for system: {}", system);
         return restClient.get()
-                .uri("/api/power/allocation/{system}", system)
+                .uri("/api/v1/power/allocation/{system}", system)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }

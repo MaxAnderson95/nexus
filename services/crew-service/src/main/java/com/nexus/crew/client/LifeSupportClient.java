@@ -38,7 +38,7 @@ public class LifeSupportClient {
 
         try {
             restClient.post()
-                    .uri("/api/life-support/adjust-capacity")
+                    .uri("/api/v1/life-support/adjust-capacity")
                     .body(Map.of(
                             "sectionId", sectionId,
                             "occupancyChange", occupancyChange

@@ -38,7 +38,7 @@ public class CrewClient {
 
         try {
             restClient.post()
-                    .uri("/api/crew/arrival")
+                    .uri("/api/v1/crew/arrival")
                     .body(Map.of(
                             "shipId", shipId,
                             "crewCount", crewCount

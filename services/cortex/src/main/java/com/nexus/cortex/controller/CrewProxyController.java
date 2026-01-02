@@ -10,7 +10,7 @@ import java.util.Map;
 import static com.nexus.cortex.validation.RequestValidator.*;
 
 @RestController
-@RequestMapping("/api/crew")
+@RequestMapping("/api/v1/crew")
 public class CrewProxyController {
 
     private final CrewClient crewClient;

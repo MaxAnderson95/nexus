@@ -38,7 +38,7 @@ public class CrewClient {
 
         try {
             var response = restClient.get()
-                    .uri("/api/crew/available")
+                    .uri("/api/v1/crew/available")
                     .retrieve()
                     .body(new ParameterizedTypeReference<List<CrewMember>>() {});
 

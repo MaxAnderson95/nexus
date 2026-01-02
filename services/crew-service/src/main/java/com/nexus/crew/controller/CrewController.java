@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/crew")
+@RequestMapping("/api/v1/crew")
 public class CrewController {
     
     private final CrewService crewService;

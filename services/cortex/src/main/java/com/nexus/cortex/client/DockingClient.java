@@ -33,12 +33,12 @@ public class DockingClient {
         
         try {
             List<Map<String, Object>> bays = restClient.get()
-                    .uri("/api/docking/bays")
+                    .uri("/api/v1/docking/bays")
                     .retrieve()
                     .body(new ParameterizedTypeReference<>() {});
             
             List<Map<String, Object>> incomingShips = restClient.get()
-                    .uri("/api/docking/ships/incoming")
+                    .uri("/api/v1/docking/ships/incoming")
                     .retrieve()
                     .body(new ParameterizedTypeReference<>() {});
             
@@ -70,7 +70,7 @@ public class DockingClient {
     public List<Map<String, Object>> getAllBays() {
         log.debug("Fetching all docking bays");
         return restClient.get()
-                .uri("/api/docking/bays")
+                .uri("/api/v1/docking/bays")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -78,7 +78,7 @@ public class DockingClient {
     public Map<String, Object> getBayById(Long id) {
         log.debug("Fetching docking bay: {}", id);
         return restClient.get()
-                .uri("/api/docking/bays/{id}", id)
+                .uri("/api/v1/docking/bays/{id}", id)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -86,7 +86,7 @@ public class DockingClient {
     public List<Map<String, Object>> getAllShips() {
         log.debug("Fetching all ships");
         return restClient.get()
-                .uri("/api/docking/ships")
+                .uri("/api/v1/docking/ships")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -94,7 +94,7 @@ public class DockingClient {
     public Map<String, Object> getShipById(Long id) {
         log.debug("Fetching ship: {}", id);
         return restClient.get()
-                .uri("/api/docking/ships/{id}", id)
+                .uri("/api/v1/docking/ships/{id}", id)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -102,7 +102,7 @@ public class DockingClient {
     public List<Map<String, Object>> getIncomingShips() {
         log.debug("Fetching incoming ships");
         return restClient.get()
-                .uri("/api/docking/ships/incoming")
+                .uri("/api/v1/docking/ships/incoming")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -110,7 +110,7 @@ public class DockingClient {
     public Map<String, Object> dockShip(Long shipId) {
         log.info("Docking ship: {}", shipId);
         return restClient.post()
-                .uri("/api/docking/dock/{shipId}", shipId)
+                .uri("/api/v1/docking/dock/{shipId}", shipId)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -118,7 +118,7 @@ public class DockingClient {
     public Map<String, Object> undockShip(Long shipId) {
         log.info("Undocking ship: {}", shipId);
         return restClient.post()
-                .uri("/api/docking/undock/{shipId}", shipId)
+                .uri("/api/v1/docking/undock/{shipId}", shipId)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -126,7 +126,7 @@ public class DockingClient {
     public List<Map<String, Object>> getDockingLogs() {
         log.debug("Fetching docking logs");
         return restClient.get()
-                .uri("/api/docking/logs")
+                .uri("/api/v1/docking/logs")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -134,7 +134,7 @@ public class DockingClient {
     public Map<String, Object> scheduleDelivery(Map<String, Object> request) {
         log.info("Scheduling delivery: {}", request);
         return restClient.post()
-                .uri("/api/docking/schedule-delivery")
+                .uri("/api/v1/docking/schedule-delivery")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
                 .retrieve()

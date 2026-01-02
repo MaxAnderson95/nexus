@@ -10,7 +10,7 @@ import java.util.Map;
 import static com.nexus.cortex.validation.RequestValidator.*;
 
 @RestController
-@RequestMapping("/api/life-support")
+@RequestMapping("/api/v1/life-support")
 public class LifeSupportProxyController {
 
     private final LifeSupportClient lifeSupportClient;

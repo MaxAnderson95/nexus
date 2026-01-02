@@ -38,7 +38,7 @@ public class PowerClient {
 
         try {
             var response = restClient.post()
-                    .uri("/api/power/allocate")
+                    .uri("/api/v1/power/allocate")
                     .body(Map.of(
                             "system", system,
                             "amountKw", amountKw,
@@ -65,7 +65,7 @@ public class PowerClient {
 
         try {
             restClient.post()
-                    .uri("/api/power/deallocate")
+                    .uri("/api/v1/power/deallocate")
                     .body(Map.of("system", system))
                     .retrieve()
                     .toBodilessEntity();
