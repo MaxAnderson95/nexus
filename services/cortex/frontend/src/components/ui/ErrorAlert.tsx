@@ -1,4 +1,4 @@
-import { AlertTriangle, Copy, Check } from 'lucide-react';
+import { AlertTriangle, Copy, Check, X } from 'lucide-react';
 import { useState } from 'react';
 
 export interface ErrorInfo {
@@ -9,9 +9,10 @@ export interface ErrorInfo {
 interface ErrorAlertProps {
   error: ErrorInfo;
   className?: string;
+  onDismiss?: () => void;
 }
 
-export function ErrorAlert({ error, className = '' }: ErrorAlertProps) {
+export function ErrorAlert({ error, className = '', onDismiss }: ErrorAlertProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopyTraceId = async () => {
@@ -53,6 +54,15 @@ export function ErrorAlert({ error, className = '' }: ErrorAlertProps) {
             </div>
           )}
         </div>
+        {onDismiss && (
+          <button
+            onClick={onDismiss}
+            className="p-1 hover:bg-red-500/20 rounded transition-colors shrink-0"
+            title="Dismiss"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
     </div>
   );

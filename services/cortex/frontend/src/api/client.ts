@@ -22,7 +22,11 @@ const TRACE_ID_HEADER = 'x-trace-id';
 class ApiError extends Error {
   public traceId: string | null;
 
-  constructor(public status: number, message: string, traceId: string | null = null) {
+  constructor(
+    public status: number,
+    message: string,
+    traceId: string | null = null
+  ) {
     super(message);
     this.name = 'ApiError';
     this.traceId = traceId;
@@ -45,16 +49,37 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     const error = await response.json().catch(() => ({ message: 'Unknown error' }));
     // Use trace ID from error body if available, otherwise fall back to header
     const errorTraceId = error.traceId || traceId;
-    throw new ApiError(response.status, error.message || error.error || 'Request failed', errorTraceId);
+    throw new ApiError(
+      response.status,
+      error.message || error.error || 'Request failed',
+      errorTraceId
+    );
   }
 
   return response.json();
+}
+
+/**
+ * Helper function to extract error info from any error, including ApiError details.
+ */
+export function extractErrorInfo(err: unknown, fallbackMessage: string): {
+  message: string;
+  traceId: string | null;
+} {
+  const message = err instanceof Error ? err.message : fallbackMessage;
+  const traceId = err instanceof ApiError ? err.traceId : null;
+  return { message, traceId };
 }
 
 export const api = {
   // Dashboard
   dashboard: {
     getStatus: () => request<DashboardStatus>('/dashboard/status'),
+    getDockingSummary: () => request<DashboardStatus['docking']>('/dashboard/docking'),
+    getCrewSummary: () => request<DashboardStatus['crew']>('/dashboard/crew'),
+    getLifeSupportSummary: () => request<DashboardStatus['lifeSupport']>('/dashboard/life-support'),
+    getPowerSummary: () => request<DashboardStatus['power']>('/dashboard/power'),
+    getInventorySummary: () => request<DashboardStatus['inventory']>('/dashboard/inventory'),
   },
 
   // Docking

@@ -37,6 +37,7 @@ yarn-error.log*
 # Build outputs
 frontend/dist/
 frontend/build/
+services/cortex/frontend/dist/
 *.tsbuildinfo
 
 # Environment

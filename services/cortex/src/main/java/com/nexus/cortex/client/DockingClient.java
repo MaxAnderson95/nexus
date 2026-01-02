@@ -29,7 +29,7 @@ public class DockingClient {
     // === Summary for Dashboard ===
     
     public DockingSummary getSummary() {
-        log.debug("Fetching docking summary");
+        log.info("Fetching docking summary");
         
         try {
             List<Map<String, Object>> bays = restClient.get()
@@ -68,7 +68,7 @@ public class DockingClient {
     // === Proxy Methods ===
     
     public List<Map<String, Object>> getAllBays() {
-        log.debug("Fetching all docking bays");
+        log.info("Fetching all docking bays");
         return restClient.get()
                 .uri("/api/docking/bays")
                 .retrieve()
@@ -76,7 +76,7 @@ public class DockingClient {
     }
     
     public Map<String, Object> getBayById(Long id) {
-        log.debug("Fetching docking bay: {}", id);
+        log.info("Fetching docking bay: {}", id);
         return restClient.get()
                 .uri("/api/docking/bays/{id}", id)
                 .retrieve()
@@ -84,7 +84,7 @@ public class DockingClient {
     }
     
     public List<Map<String, Object>> getAllShips() {
-        log.debug("Fetching all ships");
+        log.info("Fetching all ships");
         return restClient.get()
                 .uri("/api/docking/ships")
                 .retrieve()
@@ -92,7 +92,7 @@ public class DockingClient {
     }
     
     public Map<String, Object> getShipById(Long id) {
-        log.debug("Fetching ship: {}", id);
+        log.info("Fetching ship: {}", id);
         return restClient.get()
                 .uri("/api/docking/ships/{id}", id)
                 .retrieve()
@@ -100,7 +100,7 @@ public class DockingClient {
     }
     
     public List<Map<String, Object>> getIncomingShips() {
-        log.debug("Fetching incoming ships");
+        log.info("Fetching incoming ships");
         return restClient.get()
                 .uri("/api/docking/ships/incoming")
                 .retrieve()
@@ -124,7 +124,7 @@ public class DockingClient {
     }
     
     public List<Map<String, Object>> getDockingLogs() {
-        log.debug("Fetching docking logs");
+        log.info("Fetching docking logs");
         return restClient.get()
                 .uri("/api/docking/logs")
                 .retrieve()

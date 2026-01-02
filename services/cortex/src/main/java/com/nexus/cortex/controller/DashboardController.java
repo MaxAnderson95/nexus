@@ -154,6 +154,62 @@ public class DashboardController {
         return ResponseEntity.ok(status);
     }
     
+    // Individual service summary endpoints for independent loading
+    @GetMapping("/docking")
+    public ResponseEntity<DockingSummary> getDockingSummary() {
+        log.info("Fetching docking summary");
+        try {
+            return ResponseEntity.ok(dockingClient.getSummary());
+        } catch (Exception e) {
+            log.error("Failed to fetch docking summary", e);
+            throw e;
+        }
+    }
+
+    @GetMapping("/crew")
+    public ResponseEntity<CrewSummary> getCrewSummary() {
+        log.info("Fetching crew summary");
+        try {
+            return ResponseEntity.ok(crewClient.getSummary());
+        } catch (Exception e) {
+            log.error("Failed to fetch crew summary", e);
+            throw e;
+        }
+    }
+
+    @GetMapping("/life-support")
+    public ResponseEntity<LifeSupportSummary> getLifeSupportSummary() {
+        log.info("Fetching life support summary");
+        try {
+            return ResponseEntity.ok(lifeSupportClient.getSummary());
+        } catch (Exception e) {
+            log.error("Failed to fetch life support summary", e);
+            throw e;
+        }
+    }
+
+    @GetMapping("/power")
+    public ResponseEntity<PowerSummary> getPowerSummary() {
+        log.info("Fetching power summary");
+        try {
+            return ResponseEntity.ok(powerClient.getSummary());
+        } catch (Exception e) {
+            log.error("Failed to fetch power summary", e);
+            throw e;
+        }
+    }
+
+    @GetMapping("/inventory")
+    public ResponseEntity<InventorySummary> getInventorySummary() {
+        log.info("Fetching inventory summary");
+        try {
+            return ResponseEntity.ok(inventoryClient.getSummary());
+        } catch (Exception e) {
+            log.error("Failed to fetch inventory summary", e);
+            throw e;
+        }
+    }
+
     @GetMapping("/health")
     public ResponseEntity<Map<String, Object>> getServiceHealth() {
         log.debug("Checking service health");

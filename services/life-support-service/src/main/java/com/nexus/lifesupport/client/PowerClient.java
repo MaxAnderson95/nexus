@@ -4,17 +4,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Component
 public class PowerClient {
-    
+
     private static final Logger log = LoggerFactory.getLogger(PowerClient.class);
-    
+    private static final String SERVICE_NAME = "power-service";
+    // Pattern to extract the "message" field from Spring error responses
+    private static final Pattern MESSAGE_FIELD_PATTERN = Pattern.compile("\"message\"\\s*:\\s*\"([^\"]+)\"");
+    // Pattern to extract chaos engineering details from the message
+    private static final Pattern CHAOS_MESSAGE_PATTERN = Pattern.compile("\\[Chaos Engineering\\]\\s*(.+)");
+
     private final RestClient restClient;
-    
+
     public PowerClient(
             RestClient.Builder restClientBuilder,
             @Value("${services.power.url}") String powerServiceUrl) {
@@ -22,11 +31,11 @@ public class PowerClient {
                 .baseUrl(powerServiceUrl)
                 .build();
     }
-    
+
     public AllocationResponse allocatePower(String system, Double amountKw, Long sectionId) {
-        log.info("Requesting power allocation: {} kW for system '{}' in section {}", 
-                amountKw, system, sectionId);
-        
+        log.info("Calling {} to allocate {} kW for system '{}' in section {}",
+                SERVICE_NAME, amountKw, system, sectionId);
+
         try {
             var response = restClient.post()
                     .uri("/api/power/allocate")
@@ -38,32 +47,59 @@ public class PowerClient {
                     ))
                     .retrieve()
                     .body(AllocationResponse.class);
-            
+
             log.info("Power allocation successful: {}", response);
             return response;
+        } catch (HttpServerErrorException | HttpClientErrorException e) {
+            String errorDetail = extractErrorDetail(e.getResponseBodyAsString());
+            log.error("Call to {} failed: {}", SERVICE_NAME, errorDetail);
+            throw new PowerAllocationException(SERVICE_NAME, errorDetail);
         } catch (Exception e) {
-            log.error("Failed to allocate power: {}", e.getMessage());
-            throw new PowerAllocationException("Failed to allocate power for life support: " + e.getMessage());
+            log.error("Call to {} failed: {}", SERVICE_NAME, e.getMessage());
+            throw new PowerAllocationException(SERVICE_NAME, e.getMessage());
         }
     }
-    
+
     public void deallocatePower(String system) {
-        log.info("Deallocating power for system: {}", system);
-        
+        log.info("Calling {} to deallocate power for system: {}", SERVICE_NAME, system);
+
         try {
             restClient.post()
                     .uri("/api/power/deallocate")
                     .body(Map.of("system", system))
                     .retrieve()
                     .toBodilessEntity();
-            
+
             log.info("Power deallocation successful for system: {}", system);
+        } catch (HttpServerErrorException | HttpClientErrorException e) {
+            String errorDetail = extractErrorDetail(e.getResponseBodyAsString());
+            log.warn("Call to {} failed during deallocation: {}", SERVICE_NAME, errorDetail);
         } catch (Exception e) {
-            log.error("Failed to deallocate power: {}", e.getMessage());
-            // Don't throw - deallocation failure shouldn't block operations
+            log.warn("Call to {} failed during deallocation: {}", SERVICE_NAME, e.getMessage());
         }
     }
-    
+
+    private String extractErrorDetail(String responseBody) {
+        if (responseBody == null || responseBody.isEmpty()) {
+            return "Unknown error";
+        }
+
+        // First extract the message field from the JSON response
+        Matcher messageMatcher = MESSAGE_FIELD_PATTERN.matcher(responseBody);
+        if (messageMatcher.find()) {
+            String message = messageMatcher.group(1);
+            // Check if it's a chaos engineering message and extract the actual error
+            Matcher chaosMatcher = CHAOS_MESSAGE_PATTERN.matcher(message);
+            if (chaosMatcher.find()) {
+                return "[Chaos Engineering] " + chaosMatcher.group(1).trim();
+            }
+            return message;
+        }
+
+        // Return truncated body as fallback
+        return responseBody.length() > 200 ? responseBody.substring(0, 200) + "..." : responseBody;
+    }
+
     public record AllocationResponse(
         Long id,
         String systemName,
@@ -72,10 +108,17 @@ public class PowerClient {
         Long sectionId,
         String message
     ) {}
-    
+
     public static class PowerAllocationException extends RuntimeException {
-        public PowerAllocationException(String message) {
+        private final String serviceName;
+
+        public PowerAllocationException(String serviceName, String message) {
             super(message);
+            this.serviceName = serviceName;
+        }
+
+        public String getServiceName() {
+            return serviceName;
         }
     }
 }

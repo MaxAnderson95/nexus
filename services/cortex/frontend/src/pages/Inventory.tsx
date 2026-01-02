@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { api, ApiError } from '../api/client';
+import { api, extractErrorInfo } from '../api/client';
 import type { Supply, CargoManifest, ResupplyRequest } from '../types';
 import { Card } from '../components/ui/Card';
 import { ErrorAlert, type ErrorInfo } from '../components/ui/ErrorAlert';
@@ -45,7 +45,6 @@ function Inventory() {
   async function loadData(init = true) {
     try {
       if (init) setLoading(true);
-      setError(null);
       const [suppliesData, manifestsData, requestsData] = await Promise.all([
         api.inventory.getSupplies(),
         api.inventory.getManifests(),
@@ -54,10 +53,10 @@ function Inventory() {
       setSupplies(suppliesData);
       setManifests(manifestsData);
       setResupplyRequests(requestsData);
+      // Only clear error on successful load if it was a manual refresh
+      if (init) setError(null);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load inventory data';
-      const traceId = err instanceof ApiError ? err.traceId : null;
-      setError({ message, traceId });
+      setError(extractErrorInfo(err, 'Failed to load inventory data'));
     } finally {
       if (init) setLoading(false);
     }
@@ -70,9 +69,7 @@ function Inventory() {
       await api.inventory.unloadManifest(manifestId);
       await loadData(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to unload manifest';
-      const traceId = err instanceof ApiError ? err.traceId : null;
-      setError({ message, traceId });
+      setError(extractErrorInfo(err, 'Failed to unload manifest'));
     } finally {
       setUnloadingManifest(null);
     }
@@ -88,9 +85,7 @@ function Inventory() {
       setConsumingSupply(null);
       await loadData(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to consume supply';
-      const traceId = err instanceof ApiError ? err.traceId : null;
-      setError({ message, traceId });
+      setError(extractErrorInfo(err, 'Failed to consume supply'));
     } finally {
       setConsumeLoading(false);
     }
@@ -106,9 +101,7 @@ function Inventory() {
       setResupplyingSupply(null);
       await loadData(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to request resupply';
-      const traceId = err instanceof ApiError ? err.traceId : null;
-      setError({ message, traceId });
+      setError(extractErrorInfo(err, 'Failed to request resupply'));
     } finally {
       setResupplyLoading(false);
     }
@@ -154,6 +147,25 @@ function Inventory() {
      );
   }
 
+  if (error && supplies.length === 0) {
+    return (
+      <Card className="border-red-500/50 bg-red-950/20">
+        <div className="flex flex-col items-center p-8 text-center">
+          <Package className="w-12 h-12 text-red-500 mb-4" />
+          <h3 className="text-xl text-red-400 font-bold mb-2 uppercase tracking-wide">Inventory System Offline</h3>
+          <ErrorAlert error={error} className="mb-6 text-left" onDismiss={() => setError(null)} />
+          <button
+            onClick={() => loadData()}
+            className="px-6 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 rounded transition-all font-mono text-sm uppercase tracking-wider flex items-center gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retry Connection
+          </button>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -184,7 +196,7 @@ function Inventory() {
          </div>
       </div>
 
-      {error && <ErrorAlert error={error} />}
+      {error && <ErrorAlert error={error} onDismiss={() => setError(null)} />}
 
       {/* Category Filter Bar */}
       <div className="flex overflow-x-auto pb-2 gap-2 scrollbar-thin scrollbar-thumb-space-700 scrollbar-track-transparent">

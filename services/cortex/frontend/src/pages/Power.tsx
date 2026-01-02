@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { api, ApiError } from '../api/client';
+import { api, extractErrorInfo } from '../api/client';
 import type { PowerGridStatus, PowerAllocation } from '../types';
 import { Card } from '../components/ui/Card';
 import { ErrorAlert, type ErrorInfo } from '../components/ui/ErrorAlert';
@@ -42,17 +42,16 @@ function Power() {
   async function loadData(init = true) {
     try {
       if (init) setLoading(true);
-      setError(null);
       const [gridData, allocData] = await Promise.all([
         api.power.getGrid(),
         api.power.getAllocations(),
       ]);
       setGrid(gridData);
       setAllocations(allocData);
+      // Only clear error on successful load if it was a manual refresh
+      if (init) setError(null);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load power data';
-      const traceId = err instanceof ApiError ? err.traceId : null;
-      setError({ message, traceId });
+      setError(extractErrorInfo(err, 'Failed to load power data'));
     } finally {
       if (init) setLoading(false);
     }
@@ -74,9 +73,7 @@ function Power() {
       setAllocPriority(5);
       await loadData(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to allocate power';
-      const traceId = err instanceof ApiError ? err.traceId : null;
-      setError({ message, traceId });
+      setError(extractErrorInfo(err, 'Failed to allocate power'));
     } finally {
       setAllocLoading(false);
     }
@@ -89,9 +86,7 @@ function Power() {
       await api.power.deallocate(systemName);
       await loadData(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to deallocate power';
-      const traceId = err instanceof ApiError ? err.traceId : null;
-      setError({ message, traceId });
+      setError(extractErrorInfo(err, 'Failed to deallocate power'));
     } finally {
       setDeallocatingSystem(null);
     }
@@ -113,6 +108,25 @@ function Power() {
            <div className="font-mono text-sm tracking-widest animate-pulse">ANALYZING POWER GRID...</div>
         </div>
      );
+  }
+
+  if (error && !grid) {
+    return (
+      <Card className="border-red-500/50 bg-red-950/20">
+        <div className="flex flex-col items-center p-8 text-center">
+          <AlertTriangle className="w-12 h-12 text-red-500 mb-4" />
+          <h3 className="text-xl text-red-400 font-bold mb-2 uppercase tracking-wide">Power Grid Offline</h3>
+          <ErrorAlert error={error} className="mb-6 text-left" onDismiss={() => setError(null)} />
+          <button
+            onClick={() => loadData()}
+            className="px-6 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 rounded transition-all font-mono text-sm uppercase tracking-wider flex items-center gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retry Connection
+          </button>
+        </div>
+      </Card>
+    );
   }
 
   if (!grid) return null;
@@ -148,7 +162,7 @@ function Power() {
          </div>
       </div>
 
-      {error && <ErrorAlert error={error} />}
+      {error && <ErrorAlert error={error} onDismiss={() => setError(null)} />}
 
       {/* Main Grid Visualization */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

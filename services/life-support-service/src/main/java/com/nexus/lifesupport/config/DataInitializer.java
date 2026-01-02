@@ -77,15 +77,15 @@ public class DataInitializer implements ApplicationRunner {
     }
     
     private void initializeSettings() {
-        // All sections have very high max occupancy to avoid fake capacity issues
-        createSection(1L, "Bridge", 21.0, 22.0, 101.3, 45.0, 100, 8);
-        createSection(2L, "Engineering", 21.0, 22.0, 101.3, 40.0, 150, 12);
-        createSection(3L, "Habitation Deck A", 21.0, 22.0, 101.3, 50.0, 200, 35);
-        createSection(4L, "Habitation Deck B", 21.0, 22.0, 101.3, 50.0, 200, 28);
-        createSection(5L, "Medical Bay", 22.0, 21.0, 101.3, 55.0, 100, 5);
-        createSection(6L, "Science Lab", 21.0, 20.0, 101.3, 40.0, 100, 10);
-        createSection(7L, "Cargo Hold", 21.0, 20.0, 101.3, 40.0, 80, 2);
-        createSection(8L, "Maintenance Bay", 21.0, 22.0, 101.3, 40.0, 80, 6);
+        // All sections have very high max occupancy to avoid capacity issues in normal operations
+        createSection(1L, "Bridge", 21.0, 22.0, 101.3, 45.0, 5000, 8);
+        createSection(2L, "Engineering", 21.0, 22.0, 101.3, 40.0, 5000, 12);
+        createSection(3L, "Habitation Deck A", 21.0, 22.0, 101.3, 50.0, 10000, 35);
+        createSection(4L, "Habitation Deck B", 21.0, 22.0, 101.3, 50.0, 10000, 28);
+        createSection(5L, "Medical Bay", 22.0, 21.0, 101.3, 55.0, 5000, 5);
+        createSection(6L, "Science Lab", 21.0, 20.0, 101.3, 40.0, 5000, 10);
+        createSection(7L, "Cargo Hold", 21.0, 20.0, 101.3, 40.0, 5000, 2);
+        createSection(8L, "Maintenance Bay", 21.0, 22.0, 101.3, 40.0, 5000, 6);
         
         log.info("Created 8 section settings");
     }

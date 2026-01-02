@@ -71,7 +71,7 @@ public class ChaosConfig implements WebMvcConfigurer {
             if (config.maxDelayMs() > 0) {
                 int delay = config.minDelayMs() + random.nextInt(config.maxDelayMs() - config.minDelayMs() + 1);
                 if (delay > 0) {
-                    log.debug("Chaos: Adding {}ms delay", delay);
+                    log.warn("Chaos Engineering: Adding {}ms latency", delay);
                     Thread.sleep(delay);
                 }
             }
@@ -80,6 +80,7 @@ public class ChaosConfig implements WebMvcConfigurer {
             if (random.nextDouble() < config.errorRate()) {
                 String errorMessage = ERROR_MESSAGES[random.nextInt(ERROR_MESSAGES.length)];
                 log.warn("Chaos Engineering: Injecting error - {}", errorMessage);
+                log.error(errorMessage);
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
                         "[Chaos Engineering] " + errorMessage);
             }

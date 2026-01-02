@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { api, ApiError } from '../api/client';
+import { api, extractErrorInfo } from '../api/client';
 import type { DockingBay, Ship } from '../types';
 import { Card } from '../components/ui/Card';
 import { ErrorAlert, type ErrorInfo } from '../components/ui/ErrorAlert';
@@ -30,17 +30,16 @@ function Docking() {
   async function loadData(init = true) {
     try {
       if (init) setLoading(true);
-      setError(null);
       const [baysData, shipsData] = await Promise.all([
         api.docking.getBays(),
         api.docking.getShips(),
       ]);
       setBays(baysData);
       setShips(shipsData);
+      // Only clear error on successful load if it was a manual refresh
+      if (init) setError(null);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load docking data';
-      const traceId = err instanceof ApiError ? err.traceId : null;
-      setError({ message, traceId });
+      setError(extractErrorInfo(err, 'Failed to load docking data'));
     } finally {
       if (init) setLoading(false);
     }
@@ -52,9 +51,7 @@ function Docking() {
       await api.docking.dockShip(shipId);
       await loadData(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to dock ship';
-      const traceId = err instanceof ApiError ? err.traceId : null;
-      setError({ message, traceId });
+      setError(extractErrorInfo(err, 'Failed to dock ship'));
     } finally {
       setActionLoading(null);
     }
@@ -66,9 +63,7 @@ function Docking() {
       await api.docking.undockShip(shipId);
       await loadData(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to undock ship';
-      const traceId = err instanceof ApiError ? err.traceId : null;
-      setError({ message, traceId });
+      setError(extractErrorInfo(err, 'Failed to undock ship'));
     } finally {
       setActionLoading(null);
     }
@@ -80,6 +75,25 @@ function Docking() {
         <Anchor className="w-12 h-12 animate-pulse" />
         <div className="font-mono text-sm tracking-widest animate-pulse">CONNECTING TO DOCKING CONTROL...</div>
       </div>
+    );
+  }
+
+  if (error && bays.length === 0) {
+    return (
+      <Card className="border-red-500/50 bg-red-950/20">
+        <div className="flex flex-col items-center p-8 text-center">
+          <Anchor className="w-12 h-12 text-red-500 mb-4" />
+          <h3 className="text-xl text-red-400 font-bold mb-2 uppercase tracking-wide">Docking Control Offline</h3>
+          <ErrorAlert error={error} className="mb-6 text-left" onDismiss={() => setError(null)} />
+          <button
+            onClick={() => loadData()}
+            className="px-6 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 rounded transition-all font-mono text-sm uppercase tracking-wider flex items-center gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retry Connection
+          </button>
+        </div>
+      </Card>
     );
   }
 
@@ -109,7 +123,7 @@ function Docking() {
          </div>
       </div>
 
-      {error && <ErrorAlert error={error} />}
+      {error && <ErrorAlert error={error} onDismiss={() => setError(null)} />}
 
       {/* Docking Bays Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

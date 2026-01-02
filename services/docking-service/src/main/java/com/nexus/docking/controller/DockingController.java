@@ -54,17 +54,25 @@ public class DockingController {
         DockResult result = dockingService.dockShip(shipId);
         if (result.success()) {
             return ResponseEntity.ok(result);
+        } else if (result.isDownstreamError()) {
+            // Downstream service failure = 502 Bad Gateway
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(result);
         } else {
+            // Client/validation error = 400 Bad Request
             return ResponseEntity.badRequest().body(result);
         }
     }
-    
+
     @PostMapping("/undock/{shipId}")
     public ResponseEntity<DockResult> undockShip(@PathVariable Long shipId) {
         DockResult result = dockingService.undockShip(shipId);
         if (result.success()) {
             return ResponseEntity.ok(result);
+        } else if (result.isDownstreamError()) {
+            // Downstream service failure = 502 Bad Gateway
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(result);
         } else {
+            // Client/validation error = 400 Bad Request
             return ResponseEntity.badRequest().body(result);
         }
     }

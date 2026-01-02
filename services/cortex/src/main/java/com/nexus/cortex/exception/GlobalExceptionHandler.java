@@ -1,5 +1,7 @@
 package com.nexus.cortex.exception;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
 import org.slf4j.Logger;
@@ -10,16 +12,25 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * Global exception handler for Cortex (public-facing BFF).
+ *
+ * Security: Internal error details are logged but NOT exposed to clients.
+ * Only generic error messages and trace IDs are returned to the frontend.
+ * Operators can use the trace ID to look up full details in the tracing system.
+ */
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private String getCurrentTraceId() {
         SpanContext spanContext = Span.current().getSpanContext();
@@ -29,7 +40,11 @@ public class GlobalExceptionHandler {
         return null;
     }
 
-    private Map<String, Object> buildErrorResponse(int status, String error, String message) {
+    /**
+     * Build a sanitized error response for public consumption.
+     * Only includes generic message and trace ID - no internal details.
+     */
+    private Map<String, Object> buildPublicErrorResponse(int status, String error, String message) {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("timestamp", Instant.now().toString());
         response.put("status", status);
@@ -44,40 +59,98 @@ public class GlobalExceptionHandler {
         return response;
     }
 
+    /**
+     * Extract error details from downstream service response body for logging.
+     */
+    private DownstreamError extractDownstreamError(HttpStatusCodeException ex) {
+        String responseBody = ex.getResponseBodyAsString();
+        if (responseBody == null || responseBody.isEmpty()) {
+            return new DownstreamError(null, null, null);
+        }
+
+        try {
+            JsonNode root = objectMapper.readTree(responseBody);
+
+            String message = getJsonString(root, "message");
+            String downstreamService = getJsonString(root, "downstreamService");
+            String innerError = getJsonString(root, "innerError");
+
+            if (message == null) {
+                message = getJsonString(root, "error");
+            }
+
+            return new DownstreamError(message, downstreamService, innerError);
+        } catch (Exception e) {
+            return new DownstreamError(
+                    responseBody.length() > 200 ? responseBody.substring(0, 200) : responseBody,
+                    null, null);
+        }
+    }
+
+    private String getJsonString(JsonNode root, String field) {
+        JsonNode node = root.get(field);
+        return node != null && !node.isNull() ? node.asText() : null;
+    }
+
+    private record DownstreamError(String message, String downstreamService, String innerError) {}
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
         log.warn("Bad request: {}", ex.getMessage());
         return ResponseEntity.badRequest()
-                .body(buildErrorResponse(400, "Bad Request", ex.getMessage()));
+                .body(buildPublicErrorResponse(400, "Bad Request", "Invalid request parameters"));
     }
 
     @ExceptionHandler(HttpClientErrorException.class)
     public ResponseEntity<Map<String, Object>> handleHttpClientError(HttpClientErrorException ex) {
-        log.warn("Downstream client error: {} - {}", ex.getStatusCode(), ex.getMessage());
+        DownstreamError error = extractDownstreamError(ex);
         HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+
+        // Log full details internally
+        if (error.downstreamService() != null) {
+            log.warn("Downstream error from {}: {} (cause: {})",
+                    error.downstreamService(), error.message(), error.innerError());
+        } else {
+            log.warn("Downstream client error {}: {}", status, error.message());
+        }
+
+        // Return sanitized response to client
         return ResponseEntity.status(status)
-                .body(buildErrorResponse(status.value(), status.getReasonPhrase(),
-                        "Downstream service error: " + ex.getStatusText()));
+                .body(buildPublicErrorResponse(status.value(), status.getReasonPhrase(),
+                        "Request could not be processed"));
     }
 
     @ExceptionHandler(HttpServerErrorException.class)
     public ResponseEntity<Map<String, Object>> handleHttpServerError(HttpServerErrorException ex) {
-        log.error("Downstream server error: {} - {}", ex.getStatusCode(), ex.getMessage());
+        DownstreamError error = extractDownstreamError(ex);
+
+        // Log full details internally
+        if (error.downstreamService() != null) {
+            log.error("Downstream error from {}: {} (cause: {})",
+                    error.downstreamService(), error.message(), error.innerError());
+        } else {
+            log.error("Downstream server error {}: {}", ex.getStatusCode(), error.message());
+        }
+
+        // Return sanitized response to client
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-                .body(buildErrorResponse(502, "Bad Gateway", "Downstream service unavailable"));
+                .body(buildPublicErrorResponse(502, "Bad Gateway",
+                        "Service temporarily unavailable"));
     }
 
     @ExceptionHandler(RestClientException.class)
     public ResponseEntity<Map<String, Object>> handleRestClientException(RestClientException ex) {
         log.error("REST client error: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-                .body(buildErrorResponse(502, "Bad Gateway", "Failed to communicate with downstream service"));
+                .body(buildPublicErrorResponse(502, "Bad Gateway",
+                        "Service temporarily unavailable"));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
         log.error("Unexpected error: {}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(buildErrorResponse(500, "Internal Server Error", "An unexpected error occurred"));
+                .body(buildPublicErrorResponse(500, "Internal Server Error",
+                        "An unexpected error occurred"));
     }
 }

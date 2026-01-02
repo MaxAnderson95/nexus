@@ -29,7 +29,7 @@ public class CrewClient {
     // === Summary for Dashboard ===
     
     public CrewSummary getSummary() {
-        log.debug("Fetching crew summary");
+        log.info("Fetching crew summary");
         
         try {
             Map<String, Object> summary = restClient.get()
@@ -65,7 +65,7 @@ public class CrewClient {
     // === Proxy Methods ===
     
     public List<Map<String, Object>> getAllCrew() {
-        log.debug("Fetching all crew");
+        log.info("Fetching all crew");
         return restClient.get()
                 .uri("/api/crew")
                 .retrieve()
@@ -73,7 +73,7 @@ public class CrewClient {
     }
     
     public Map<String, Object> getCrewCount() {
-        log.debug("Fetching crew count");
+        log.info("Fetching crew count");
         return restClient.get()
                 .uri("/api/crew/count")
                 .retrieve()
@@ -81,7 +81,7 @@ public class CrewClient {
     }
     
     public Map<String, Object> getCrewById(Long id) {
-        log.debug("Fetching crew member: {}", id);
+        log.info("Fetching crew member: {}", id);
         return restClient.get()
                 .uri("/api/crew/{id}", id)
                 .retrieve()
@@ -89,7 +89,7 @@ public class CrewClient {
     }
     
     public List<Map<String, Object>> getCrewBySection(Long sectionId) {
-        log.debug("Fetching crew by section: {}", sectionId);
+        log.info("Fetching crew by section: {}", sectionId);
         return restClient.get()
                 .uri("/api/crew/section/{sectionId}", sectionId)
                 .retrieve()
@@ -97,7 +97,7 @@ public class CrewClient {
     }
     
     public List<Map<String, Object>> getAvailableCrew() {
-        log.debug("Fetching available crew");
+        log.info("Fetching available crew");
         return restClient.get()
                 .uri("/api/crew/available")
                 .retrieve()
@@ -125,7 +125,7 @@ public class CrewClient {
     }
     
     public List<Map<String, Object>> getAllSections() {
-        log.debug("Fetching all sections");
+        log.info("Fetching all sections");
         return restClient.get()
                 .uri("/api/crew/sections")
                 .retrieve()
@@ -133,7 +133,7 @@ public class CrewClient {
     }
     
     public Map<String, Object> getSectionById(Long id) {
-        log.debug("Fetching section: {}", id);
+        log.info("Fetching section: {}", id);
         return restClient.get()
                 .uri("/api/crew/sections/{id}", id)
                 .retrieve()
@@ -141,7 +141,7 @@ public class CrewClient {
     }
     
     public Map<String, Object> getSectionHeadcount(Long id) {
-        log.debug("Fetching section headcount: {}", id);
+        log.info("Fetching section headcount: {}", id);
         return restClient.get()
                 .uri("/api/crew/sections/{id}/headcount", id)
                 .retrieve()

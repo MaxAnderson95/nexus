@@ -29,7 +29,7 @@ public class InventoryClient {
     // === Summary for Dashboard ===
     
     public InventorySummary getSummary() {
-        log.debug("Fetching inventory summary");
+        log.info("Fetching inventory summary");
         
         try {
             List<Map<String, Object>> supplies = restClient.get()
@@ -96,7 +96,7 @@ public class InventoryClient {
     // === Proxy Methods ===
     
     public Map<String, Object> getInventoryStatus() {
-        log.debug("Fetching inventory status");
+        log.info("Fetching inventory status");
         return restClient.get()
                 .uri("/api/inventory")
                 .retrieve()
@@ -104,7 +104,7 @@ public class InventoryClient {
     }
     
     public List<Map<String, Object>> getAllSupplies() {
-        log.debug("Fetching all supplies");
+        log.info("Fetching all supplies");
         return restClient.get()
                 .uri("/api/inventory/supplies")
                 .retrieve()
@@ -112,7 +112,7 @@ public class InventoryClient {
     }
     
     public Map<String, Object> getSupplyById(Long id) {
-        log.debug("Fetching supply: {}", id);
+        log.info("Fetching supply: {}", id);
         return restClient.get()
                 .uri("/api/inventory/supplies/{id}", id)
                 .retrieve()
@@ -120,7 +120,7 @@ public class InventoryClient {
     }
     
     public List<Map<String, Object>> getLowStockSupplies() {
-        log.debug("Fetching low stock supplies");
+        log.info("Fetching low stock supplies");
         return restClient.get()
                 .uri("/api/inventory/supplies/low-stock")
                 .retrieve()
@@ -128,7 +128,7 @@ public class InventoryClient {
     }
     
     public Map<String, Object> getLowStockCount() {
-        log.debug("Fetching low stock count");
+        log.info("Fetching low stock count");
         return restClient.get()
                 .uri("/api/inventory/supplies/low-stock/count")
                 .retrieve()
@@ -156,7 +156,7 @@ public class InventoryClient {
     }
     
     public List<Map<String, Object>> getResupplyRequests() {
-        log.debug("Fetching resupply requests");
+        log.info("Fetching resupply requests");
         return restClient.get()
                 .uri("/api/inventory/resupply-requests")
                 .retrieve()
@@ -164,7 +164,7 @@ public class InventoryClient {
     }
     
     public List<Map<String, Object>> getCargoManifests() {
-        log.debug("Fetching cargo manifests");
+        log.info("Fetching cargo manifests");
         return restClient.get()
                 .uri("/api/inventory/cargo-manifests")
                 .retrieve()
@@ -172,7 +172,7 @@ public class InventoryClient {
     }
     
     public Map<String, Object> getCargoManifestById(Long id) {
-        log.debug("Fetching cargo manifest: {}", id);
+        log.info("Fetching cargo manifest: {}", id);
         return restClient.get()
                 .uri("/api/inventory/cargo-manifests/{id}", id)
                 .retrieve()

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api, ApiError } from '../api/client';
+import { api, extractErrorInfo } from '../api/client';
 import type { ResetAllTablesResponse } from '../types';
 import { Card } from '../components/ui/Card';
 import { ErrorAlert, type ErrorInfo } from '../components/ui/ErrorAlert';
@@ -28,9 +28,7 @@ function Admin() {
       const response = await api.admin.resetAllTables();
       setResult(response);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to reset demo data';
-      const traceId = err instanceof ApiError ? err.traceId : null;
-      setError({ message, traceId });
+      setError(extractErrorInfo(err, 'Failed to reset demo data'));
     } finally {
       setLoading(false);
     }

@@ -164,8 +164,8 @@ public class DockingService {
             return DockResult.failure(shipId, "Ship is already docked");
         }
         
-        // Find an available bay
-        DockingBay bay = bayRepository.findFirstByStatusOrderByBayNumberAsc(DockingBay.BayStatus.AVAILABLE)
+        // Find an available bay (with pessimistic lock to prevent race conditions)
+        DockingBay bay = bayRepository.findFirstAvailableBayWithLock(DockingBay.BayStatus.AVAILABLE)
                 .orElseThrow(() -> new NoBayAvailableException("No docking bay available"));
         
         log.info("Allocating bay {} for ship '{}'", bay.getBayNumber(), ship.getName());
@@ -174,8 +174,11 @@ public class DockingService {
         try {
             powerClient.allocatePowerForBay(bay.getId(), POWER_PER_BAY_KW);
         } catch (PowerClient.PowerAllocationException e) {
-            log.error("Failed to allocate power for docking bay: {}", e.getMessage());
-            return DockResult.failure(shipId, "Failed to allocate power for docking bay: " + e.getMessage());
+            log.error("Downstream call to {} failed: {}", e.getServiceName(), e.getMessage());
+            return DockResult.downstreamFailure(shipId,
+                    "Failed to allocate power for docking bay",
+                    e.getServiceName(),
+                    e.getMessage());
         }
         
         // Update bay status

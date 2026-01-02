@@ -29,7 +29,7 @@ public class LifeSupportClient {
     // === Summary for Dashboard ===
     
     public LifeSupportSummary getSummary() {
-        log.debug("Fetching life support summary");
+        log.info("Fetching life support summary");
         
         try {
             Map<String, Object> summary = restClient.get()
@@ -73,7 +73,7 @@ public class LifeSupportClient {
     // === Proxy Methods ===
     
     public List<Map<String, Object>> getAllEnvironment() {
-        log.debug("Fetching all environment status");
+        log.info("Fetching all environment status");
         return restClient.get()
                 .uri("/api/life-support/environment")
                 .retrieve()
@@ -81,7 +81,7 @@ public class LifeSupportClient {
     }
     
     public Map<String, Object> getEnvironmentSummary() {
-        log.debug("Fetching environment summary");
+        log.info("Fetching environment summary");
         return restClient.get()
                 .uri("/api/life-support/environment/summary")
                 .retrieve()
@@ -89,7 +89,7 @@ public class LifeSupportClient {
     }
     
     public Map<String, Object> getSectionEnvironment(Long sectionId) {
-        log.debug("Fetching section environment: {}", sectionId);
+        log.info("Fetching section environment: {}", sectionId);
         return restClient.get()
                 .uri("/api/life-support/environment/section/{sectionId}", sectionId)
                 .retrieve()
@@ -117,7 +117,7 @@ public class LifeSupportClient {
     }
     
     public List<Map<String, Object>> getAlerts() {
-        log.debug("Fetching active alerts");
+        log.info("Fetching active alerts");
         return restClient.get()
                 .uri("/api/life-support/alerts")
                 .retrieve()
@@ -125,7 +125,7 @@ public class LifeSupportClient {
     }
     
     public List<Map<String, Object>> getAllAlerts() {
-        log.debug("Fetching all alerts");
+        log.info("Fetching all alerts");
         return restClient.get()
                 .uri("/api/life-support/alerts/all")
                 .retrieve()
