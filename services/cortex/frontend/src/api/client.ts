@@ -17,11 +17,15 @@ import type {
 } from '../types';
 
 const BASE_URL = '/api';
+const TRACE_ID_HEADER = 'x-trace-id';
 
 class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  public traceId: string | null;
+
+  constructor(public status: number, message: string, traceId: string | null = null) {
     super(message);
     this.name = 'ApiError';
+    this.traceId = traceId;
   }
 }
 
@@ -34,9 +38,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     ...options,
   });
 
+  // Extract trace ID from response header
+  const traceId = response.headers.get(TRACE_ID_HEADER);
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Unknown error' }));
-    throw new ApiError(response.status, error.message || error.error || 'Request failed');
+    // Use trace ID from error body if available, otherwise fall back to header
+    const errorTraceId = error.traceId || traceId;
+    throw new ApiError(response.status, error.message || error.error || 'Request failed', errorTraceId);
   }
 
   return response.json();

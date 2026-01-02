@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { api } from '../api/client';
+import { api, ApiError } from '../api/client';
 import type { DockingBay, Ship } from '../types';
 import { Card } from '../components/ui/Card';
-import { 
-  Anchor, 
-  Rocket, 
-  LogOut, 
-  LogIn, 
-  AlertTriangle,
+import { ErrorAlert, type ErrorInfo } from '../components/ui/ErrorAlert';
+import {
+  Anchor,
+  Rocket,
+  LogOut,
+  LogIn,
   RefreshCw,
   Box,
   Radio
@@ -18,7 +18,7 @@ function Docking() {
   const [bays, setBays] = useState<DockingBay[]>([]);
   const [ships, setShips] = useState<Ship[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorInfo | null>(null);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   useEffect(() => {
@@ -38,7 +38,9 @@ function Docking() {
       setBays(baysData);
       setShips(shipsData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load docking data');
+      const message = err instanceof Error ? err.message : 'Failed to load docking data';
+      const traceId = err instanceof ApiError ? err.traceId : null;
+      setError({ message, traceId });
     } finally {
       if (init) setLoading(false);
     }
@@ -50,7 +52,9 @@ function Docking() {
       await api.docking.dockShip(shipId);
       await loadData(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to dock ship');
+      const message = err instanceof Error ? err.message : 'Failed to dock ship';
+      const traceId = err instanceof ApiError ? err.traceId : null;
+      setError({ message, traceId });
     } finally {
       setActionLoading(null);
     }
@@ -62,7 +66,9 @@ function Docking() {
       await api.docking.undockShip(shipId);
       await loadData(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to undock ship');
+      const message = err instanceof Error ? err.message : 'Failed to undock ship';
+      const traceId = err instanceof ApiError ? err.traceId : null;
+      setError({ message, traceId });
     } finally {
       setActionLoading(null);
     }
@@ -103,12 +109,7 @@ function Docking() {
          </div>
       </div>
 
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5" />
-          <span>{error}</span>
-        </div>
-      )}
+      {error && <ErrorAlert error={error} />}
 
       {/* Docking Bays Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

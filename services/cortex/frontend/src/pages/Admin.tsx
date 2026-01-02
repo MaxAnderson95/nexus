@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { api } from '../api/client';
+import { api, ApiError } from '../api/client';
 import type { ResetAllTablesResponse } from '../types';
 import { Card } from '../components/ui/Card';
-import { 
+import { ErrorAlert, type ErrorInfo } from '../components/ui/ErrorAlert';
+import {
   RefreshCw,
   AlertTriangle,
   CheckCircle2,
@@ -15,7 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 function Admin() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ResetAllTablesResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorInfo | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   async function handleResetDemoData() {
@@ -27,7 +28,9 @@ function Admin() {
       const response = await api.admin.resetAllTables();
       setResult(response);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to reset demo data');
+      const message = err instanceof Error ? err.message : 'Failed to reset demo data';
+      const traceId = err instanceof ApiError ? err.traceId : null;
+      setError({ message, traceId });
     } finally {
       setLoading(false);
     }
@@ -48,12 +51,7 @@ function Admin() {
         </div>
       </div>
 
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5" />
-          <span>{error}</span>
-        </div>
-      )}
+      {error && <ErrorAlert error={error} />}
 
       {/* Demo Data Reset Card */}
       <Card 
