@@ -114,7 +114,7 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
 
       - name: Package Helm chart
-        run: helm package ./helm/nexus-station --version ${{ inputs.version }} --app-version ${{ inputs.version }}
+        run: helm package ./charts/nexus-station --version ${{ inputs.version }} --app-version ${{ inputs.version }}
 
       - name: Push Helm chart to OCI Registry
         run: helm push nexus-station-${{ inputs.version }}.tgz oci://${{ env.REGISTRY }}/${{ env.CHART_REPO }}
