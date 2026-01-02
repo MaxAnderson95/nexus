@@ -110,6 +110,40 @@ All backend services share the following infrastructure:
 - `life_support` - Environment readings, sections, alerts
 - `inventory` - Supplies, manifests, resupply requests
 
+### Example: Docking a Ship
+
+When a user docks a ship, the request cascades through multiple services:
+
+```
+React Dashboard
+    │
+    ▼
+CORTEX (BFF)
+    │  POST /api/docking/ships/{id}/dock
+    ▼
+Docking Service
+    │
+    ├──► Power Service
+    │       POST /api/power/allocate
+    │       (allocates power for bay)
+    │
+    └──► Crew Service
+            │  POST /api/crew/arrival
+            │  (registers arriving crew)
+            │
+            ▼
+         Life Support Service
+            │  POST /api/life-support/adjust-capacity
+            │  (updates capacity for crew occupancy)
+            │
+            ▼
+         Power Service
+               POST /api/power/allocate
+               (allocates power for environmental systems)
+```
+
+Power Service is called twice: once directly from Docking and once at the end of the Crew → Life Support chain.
+
 ## Quick Start
 
 ### Prerequisites
