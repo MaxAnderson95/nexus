@@ -234,7 +234,7 @@ Set via environment: `CHAOS_DEFAULT=low` or per-service: `POWER_CHAOS=high`
 | Power | - | Base service (no dependencies) |
 | Life Support | Power | Power allocation for environmental systems |
 | Crew | Life Support | Section capacity adjustments when crew relocates |
-| Docking | Power, Crew | Bay power allocation, crew notifications |
+| Docking | Power, Crew, Inventory | Bay power allocation, crew notifications, cargo auto-unloading |
 | Inventory | Docking, Crew | Cargo manifest linking, crew for cargo handling |
 
 ## Important Files

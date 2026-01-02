@@ -92,7 +92,13 @@ public class InventoryController {
         CargoManifestDto result = inventoryService.unloadManifest(id);
         return ResponseEntity.ok(result);
     }
-    
+
+    @PostMapping("/cargo-manifests/unload-by-ship/{shipId}")
+    public ResponseEntity<List<CargoManifestDto>> unloadManifestsByShipId(@PathVariable Long shipId) {
+        List<CargoManifestDto> result = inventoryService.unloadManifestsByShipId(shipId);
+        return ResponseEntity.ok(result);
+    }
+
     // Exception handlers
     @ExceptionHandler(InventoryService.SupplyNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleSupplyNotFound(InventoryService.SupplyNotFoundException ex) {

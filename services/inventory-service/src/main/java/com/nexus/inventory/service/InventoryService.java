@@ -3,6 +3,7 @@ package com.nexus.inventory.service;
 import com.nexus.inventory.client.CrewClient;
 import com.nexus.inventory.client.DockingClient;
 import com.nexus.inventory.dto.*;
+import com.nexus.inventory.entity.CargoItem;
 import com.nexus.inventory.entity.CargoManifest;
 import com.nexus.inventory.entity.ResupplyRequest;
 import com.nexus.inventory.entity.Supply;
@@ -222,11 +223,27 @@ public class InventoryService {
         
         // Call docking service to schedule delivery
         try {
-            DockingClient.ScheduleDeliveryResponse deliveryResponse = 
+            DockingClient.ScheduleDeliveryResponse deliveryResponse =
                     dockingClient.scheduleDelivery(supply.getName(), request.quantity());
-            
+
             log.info("Delivery scheduled: {}", deliveryResponse);
-            
+
+            // Create cargo manifest for this delivery
+            CargoManifest manifest = new CargoManifest();
+            manifest.setShipId(deliveryResponse.deliveryId());
+            manifest.setShipName("Resupply-" + deliveryResponse.deliveryId());
+            manifest.setStatus(CargoManifest.ManifestStatus.PENDING);
+
+            CargoItem item = new CargoItem();
+            item.setSupplyId(supply.getId());
+            item.setSupplyName(supply.getName());
+            item.setQuantity(request.quantity());
+            manifest.addItem(item);
+
+            manifestRepository.save(manifest);
+            log.info("Created cargo manifest for ship ID: {} with {} units of '{}'",
+                    deliveryResponse.deliveryId(), request.quantity(), supply.getName());
+
             // Update status to approved after successful scheduling
             resupplyRequest.setStatus(ResupplyRequest.RequestStatus.APPROVED);
             resupplyRequest = resupplyRepository.save(resupplyRequest);
@@ -327,10 +344,26 @@ public class InventoryService {
         }
         
         log.info("Completed unload of cargo manifest ID: {}", manifestId);
-        
+
         return CargoManifestDto.fromEntity(manifest);
     }
-    
+
+    @Transactional
+    public List<CargoManifestDto> unloadManifestsByShipId(Long shipId) {
+        log.info("Unloading all pending cargo manifests for ship ID: {}", shipId);
+
+        List<CargoManifest> manifests = manifestRepository.findByShipId(shipId);
+
+        List<CargoManifestDto> unloadedManifests = manifests.stream()
+                .filter(m -> m.getStatus() == CargoManifest.ManifestStatus.PENDING)
+                .map(m -> unloadManifest(m.getId()))
+                .toList();
+
+        log.info("Unloaded {} manifests for ship ID: {}", unloadedManifests.size(), shipId);
+
+        return unloadedManifests;
+    }
+
     // Exception classes
     public static class SupplyNotFoundException extends RuntimeException {
         public SupplyNotFoundException(String message) {

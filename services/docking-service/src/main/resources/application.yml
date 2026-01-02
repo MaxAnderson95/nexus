@@ -76,3 +76,5 @@ services:
     url: ${SERVICES_POWER_URL:http://localhost:8080}
   crew:
     url: ${SERVICES_CREW_URL:http://localhost:8080}
+  inventory:
+    url: ${SERVICES_INVENTORY_URL:http://localhost:8080}

@@ -1,6 +1,7 @@
 package com.nexus.docking.service;
 
 import com.nexus.docking.client.CrewClient;
+import com.nexus.docking.client.InventoryClient;
 import com.nexus.docking.client.PowerClient;
 import com.nexus.docking.dto.*;
 import com.nexus.docking.entity.DockingBay;
@@ -40,16 +41,18 @@ public class DockingService {
     private final DockingLogRepository logRepository;
     private final PowerClient powerClient;
     private final CrewClient crewClient;
+    private final InventoryClient inventoryClient;
     private final RedisTemplate<String, String> redisTemplate;
     private final Tracer tracer;
     private final boolean customSpansEnabled;
-    
+
     public DockingService(
             DockingBayRepository bayRepository,
             ShipRepository shipRepository,
             DockingLogRepository logRepository,
             PowerClient powerClient,
             CrewClient crewClient,
+            InventoryClient inventoryClient,
             RedisTemplate<String, String> redisTemplate,
             Tracer tracer,
             @Value("${nexus.telemetry.custom-spans:false}") boolean customSpansEnabled) {
@@ -58,6 +61,7 @@ public class DockingService {
         this.logRepository = logRepository;
         this.powerClient = powerClient;
         this.crewClient = crewClient;
+        this.inventoryClient = inventoryClient;
         this.redisTemplate = redisTemplate;
         this.tracer = tracer;
         this.customSpansEnabled = customSpansEnabled;
@@ -180,7 +184,23 @@ public class DockingService {
                     e.getServiceName(),
                     e.getMessage());
         }
-        
+
+        // Unload cargo for cargo ships (distributed call)
+        if (ship.getType() == Ship.ShipType.CARGO) {
+            try {
+                var unloadedManifests = inventoryClient.unloadCargoForShip(ship.getId());
+                log.info("Unloaded {} cargo manifests for ship '{}'", unloadedManifests.size(), ship.getName());
+            } catch (InventoryClient.InventoryServiceException e) {
+                log.error("Downstream call to {} failed: {}", e.getServiceName(), e.getMessage());
+                // Rollback: deallocate power
+                powerClient.deallocatePowerForBay(bay.getId());
+                return DockResult.downstreamFailure(shipId,
+                        "Failed to unload cargo for ship",
+                        e.getServiceName(),
+                        e.getMessage());
+            }
+        }
+
         // Update bay status
         bay.setStatus(DockingBay.BayStatus.OCCUPIED);
         bay.setCurrentShipId(shipId);

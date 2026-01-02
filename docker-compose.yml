@@ -179,6 +179,7 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       SERVICES_POWER_URL: http://power-service:8080
       SERVICES_CREW_URL: http://crew-service:8080
+      SERVICES_INVENTORY_URL: http://inventory-service:8080
     networks:
       - nexus
     depends_on:
