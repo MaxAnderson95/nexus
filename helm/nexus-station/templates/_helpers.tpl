@@ -50,7 +50,7 @@ Usage: {{ include "nexus-station.image" (dict "context" . "image" .Values.cortex
 {{- define "nexus-station.image" -}}
 {{- $registry := .image.registry | default "" -}}
 {{- $repository := .image.repository -}}
-{{- $tag := .image.tag | default "latest" -}}
+{{- $tag := .image.tag | default .context.Chart.AppVersion -}}
 {{- if $registry -}}
 {{- printf "%s/%s:%s" $registry $repository $tag -}}
 {{- else -}}

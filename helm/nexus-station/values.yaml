@@ -47,7 +47,7 @@ cortex:
     repository: "maxanderson95/nexus/cortex"
     # -- Image pull policy
     pullPolicy: Always
-    # -- Image tag (defaults to "latest" if empty)
+    # -- Image tag (defaults to chart appVersion if empty)
     tag: ""
 
   # -- Additional annotations to add to Cortex pods
