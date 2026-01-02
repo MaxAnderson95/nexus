@@ -19,7 +19,7 @@ function Docking() {
   const [ships, setShips] = useState<Ship[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ErrorInfo | null>(null);
-  const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [actionLoading, setActionLoading] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     loadData();
@@ -47,25 +47,25 @@ function Docking() {
 
   async function handleDock(shipId: number) {
     try {
-      setActionLoading(shipId);
+      setActionLoading(prev => ({ ...prev, [shipId]: true }));
       await api.docking.dockShip(shipId);
       await loadData(false);
     } catch (err) {
       setError(extractErrorInfo(err, 'Failed to dock ship'));
     } finally {
-      setActionLoading(null);
+      setActionLoading(prev => ({ ...prev, [shipId]: false }));
     }
   }
 
   async function handleUndock(shipId: number) {
     try {
-      setActionLoading(shipId);
+      setActionLoading(prev => ({ ...prev, [shipId]: true }));
       await api.docking.undockShip(shipId);
       await loadData(false);
     } catch (err) {
       setError(extractErrorInfo(err, 'Failed to undock ship'));
     } finally {
-      setActionLoading(null);
+      setActionLoading(prev => ({ ...prev, [shipId]: false }));
     }
   }
 
@@ -233,10 +233,10 @@ function Docking() {
                       {ship.status === 'INCOMING' && (
                         <button
                           onClick={() => handleDock(ship.id)}
-                          disabled={actionLoading === ship.id}
+                          disabled={!!actionLoading[ship.id]}
                           className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/50 rounded text-xs font-mono uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {actionLoading === ship.id ? (
+                          {actionLoading[ship.id] ? (
                              <div className="w-3 h-3 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
                           ) : (
                              <LogIn className="w-3 h-3" />
@@ -247,10 +247,10 @@ function Docking() {
                       {ship.status === 'DOCKED' && (
                         <button
                           onClick={() => handleUndock(ship.id)}
-                          disabled={actionLoading === ship.id}
+                          disabled={!!actionLoading[ship.id]}
                           className="inline-flex items-center gap-2 px-4 py-1.5 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/50 rounded text-xs font-mono uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {actionLoading === ship.id ? (
+                          {actionLoading[ship.id] ? (
                              <div className="w-3 h-3 border-2 border-yellow-400/30 border-t-yellow-400 rounded-full animate-spin" />
                           ) : (
                              <LogOut className="w-3 h-3" />

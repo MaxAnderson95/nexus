@@ -25,7 +25,7 @@ function LifeSupport() {
   const [error, setError] = useState<ErrorInfo | null>(null);
   
   // Self-test state
-  const [testingSection, setTestingSection] = useState<number | null>(null);
+  const [testingSections, setTestingSections] = useState<Record<number, boolean>>({});
   const [testResult, setTestResult] = useState<SelfTestResult | null>(null);
   
   // Adjustment modal state
@@ -69,7 +69,7 @@ function LifeSupport() {
 
   async function handleSelfTest(sectionId: number) {
     try {
-      setTestingSection(sectionId);
+      setTestingSections(prev => ({ ...prev, [sectionId]: true }));
       setTestResult(null);
       setError(null);
       const result = await api.lifeSupport.runSelfTest(sectionId);
@@ -77,7 +77,7 @@ function LifeSupport() {
     } catch (err) {
       setError(extractErrorInfo(err, 'Self-test failed'));
     } finally {
-      setTestingSection(null);
+      setTestingSections(prev => ({ ...prev, [sectionId]: false }));
     }
   }
 
@@ -289,10 +289,10 @@ function LifeSupport() {
                <div className="p-4 flex gap-2">
                   <button
                      onClick={() => handleSelfTest(section.sectionId)}
-                     disabled={testingSection !== null}
+                     disabled={!!testingSections[section.sectionId]}
                      className="flex-1 py-1.5 flex items-center justify-center gap-2 rounded border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 text-xs font-mono uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                     {testingSection === section.sectionId ? (
+                     {testingSections[section.sectionId] ? (
                         <div className="w-3 h-3 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
                      ) : (
                         <Activity className="w-3 h-3" />

@@ -31,7 +31,7 @@ function Power() {
   const [allocLoading, setAllocLoading] = useState(false);
   
   // Deallocation state
-  const [deallocatingSystem, setDeallocatingSystem] = useState<string | null>(null);
+  const [deallocatingSystems, setDeallocatingSystems] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     loadData();
@@ -81,14 +81,14 @@ function Power() {
 
   async function handleDeallocate(systemName: string) {
     try {
-      setDeallocatingSystem(systemName);
+      setDeallocatingSystems(prev => ({ ...prev, [systemName]: true }));
       setError(null);
       await api.power.deallocate(systemName);
       await loadData(false);
     } catch (err) {
       setError(extractErrorInfo(err, 'Failed to deallocate power'));
     } finally {
-      setDeallocatingSystem(null);
+      setDeallocatingSystems(prev => ({ ...prev, [systemName]: false }));
     }
   }
 
@@ -284,10 +284,10 @@ function Power() {
 
                       <button
                          onClick={() => handleDeallocate(alloc.systemName)}
-                         disabled={deallocatingSystem === alloc.systemName}
+                         disabled={!!deallocatingSystems[alloc.systemName]}
                          className="w-full py-2 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/20 rounded text-xs font-mono uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
                       >
-                         {deallocatingSystem === alloc.systemName ? (
+                         {deallocatingSystems[alloc.systemName] ? (
                             <div className="w-3 h-3 border-2 border-slate-400/30 border-t-slate-400 rounded-full animate-spin" />
                          ) : (
                             <Trash2 className="w-3 h-3" />

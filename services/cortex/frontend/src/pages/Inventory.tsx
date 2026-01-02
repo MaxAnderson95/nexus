@@ -34,7 +34,7 @@ function Inventory() {
   const [resupplyLoading, setResupplyLoading] = useState(false);
   
   // Unload state
-  const [unloadingManifest, setUnloadingManifest] = useState<number | null>(null);
+  const [unloadingManifests, setUnloadingManifests] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     loadData();
@@ -64,14 +64,14 @@ function Inventory() {
 
   async function handleUnload(manifestId: number) {
     try {
-      setUnloadingManifest(manifestId);
+      setUnloadingManifests(prev => ({ ...prev, [manifestId]: true }));
       setError(null);
       await api.inventory.unloadManifest(manifestId);
       await loadData(false);
     } catch (err) {
       setError(extractErrorInfo(err, 'Failed to unload manifest'));
     } finally {
-      setUnloadingManifest(null);
+      setUnloadingManifests(prev => ({ ...prev, [manifestId]: false }));
     }
   }
 
@@ -301,11 +301,11 @@ function Inventory() {
                                  </div>
                                  <button
                                     onClick={() => handleUnload(manifest.id)}
-                                    disabled={unloadingManifest === manifest.id}
+                                    disabled={!!unloadingManifests[manifest.id]}
                                     className="p-1.5 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded transition-all disabled:opacity-50"
                                     title="Unload Cargo"
                                  >
-                                    {unloadingManifest === manifest.id ? (
+                                    {unloadingManifests[manifest.id] ? (
                                        <div className="w-4 h-4 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
                                     ) : (
                                        <Box className="w-4 h-4" />
