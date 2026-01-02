@@ -28,7 +28,7 @@ spring:
 
 # Server
 server:
-  port: 8084
+  port: 8080
 
 # Actuator
 management:

@@ -25,8 +25,8 @@ NEXUS Station simulates operations management for a space station, including:
         ▼             ▼                   ▼                   ▼             ▼
    ┌─────────┐   ┌─────────┐        ┌───────────┐        ┌─────────┐   ┌───────────┐
    │ Docking │   │  Crew   │        │   Life    │        │  Power  │   │ Inventory │
-   │  :8081  │   │  :8082  │        │  Support  │        │  :8084  │   │   :8085   │
-   └────┬────┘   └────┬────┘        │   :8083   │        └────△────┘   └─────┬─────┘
+   │  :8080  │   │  :8080  │        │  Support  │        │  :8080  │   │   :8080   │
+   └────┬────┘   └────┬────┘        │   :8080   │        └────△────┘   └─────┬─────┘
         │             │             └─────┬─────┘             │              │
         │             │                   │                   │              │
         │             │                   └───────────────────┘              │
@@ -253,11 +253,11 @@ npm run lint
 | Service | Port |
 |---------|------|
 | CORTEX (Frontend + API) | 8080 |
-| Docking | 8081 |
-| Crew | 8082 |
-| Life Support | 8083 |
-| Power | 8084 |
-| Inventory | 8085 |
+| Docking | 8080 |
+| Crew | 8080 |
+| Life Support | 8080 |
+| Power | 8080 |
+| Inventory | 8080 |
 | PostgreSQL | 5432 |
 | Redis | 6379 |
 | Locust UI | 8089 |

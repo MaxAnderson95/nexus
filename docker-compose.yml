@@ -34,6 +34,21 @@ services:
       timeout: 5s
       retries: 5
 
+  otel-collector:
+    image: otel/opentelemetry-collector:0.114.0
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    networks:
+      - nexus
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:13133/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # =============================================================================
   # CORTEX (BFF + Frontend)
   # =============================================================================
@@ -44,13 +59,15 @@ services:
       - "8080:8080"
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      OTEL_SDK_DISABLED: "true"
+      OTEL_SDK_DISABLED: "false"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: cortex
       CHAOS: ${CORTEX_CHAOS:-${CHAOS_DEFAULT:-none}}
-      SERVICES_DOCKING_URL: http://docking-service:8081
-      SERVICES_CREW_URL: http://crew-service:8082
-      SERVICES_LIFE_SUPPORT_URL: http://life-support-service:8083
-      SERVICES_POWER_URL: http://power-service:8084
-      SERVICES_INVENTORY_URL: http://inventory-service:8085
+      SERVICES_DOCKING_URL: http://docking-service:8080
+      SERVICES_CREW_URL: http://crew-service:8080
+      SERVICES_LIFE_SUPPORT_URL: http://life-support-service:8080
+      SERVICES_POWER_URL: http://power-service:8080
+      SERVICES_INVENTORY_URL: http://inventory-service:8080
     networks:
       - nexus
     healthcheck:
@@ -68,7 +85,9 @@ services:
     build: ./services/power-service
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      OTEL_SDK_DISABLED: "true"
+      OTEL_SDK_DISABLED: "false"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: power-service
       CHAOS: ${POWER_CHAOS:-${CHAOS_DEFAULT:-none}}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-nexus}
@@ -83,7 +102,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health/readiness"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health/readiness"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -93,14 +112,16 @@ services:
     build: ./services/life-support-service
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      OTEL_SDK_DISABLED: "true"
+      OTEL_SDK_DISABLED: "false"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: life-support-service
       CHAOS: ${LIFE_SUPPORT_CHAOS:-${CHAOS_DEFAULT:-none}}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-nexus}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-nexus}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
-      SERVICES_POWER_URL: http://power-service:8084
+      SERVICES_POWER_URL: http://power-service:8080
     networks:
       - nexus
     depends_on:
@@ -109,7 +130,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health/readiness"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health/readiness"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -119,14 +140,16 @@ services:
     build: ./services/crew-service
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      OTEL_SDK_DISABLED: "true"
+      OTEL_SDK_DISABLED: "false"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: crew-service
       CHAOS: ${CREW_CHAOS:-${CHAOS_DEFAULT:-none}}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-nexus}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-nexus}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
-      SERVICES_LIFE_SUPPORT_URL: http://life-support-service:8083
+      SERVICES_LIFE_SUPPORT_URL: http://life-support-service:8080
     networks:
       - nexus
     depends_on:
@@ -135,7 +158,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health/readiness"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health/readiness"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -145,15 +168,17 @@ services:
     build: ./services/docking-service
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      OTEL_SDK_DISABLED: "true"
+      OTEL_SDK_DISABLED: "false"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: docking-service
       CHAOS: ${DOCKING_CHAOS:-${CHAOS_DEFAULT:-none}}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-nexus}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-nexus}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
-      SERVICES_POWER_URL: http://power-service:8084
-      SERVICES_CREW_URL: http://crew-service:8082
+      SERVICES_POWER_URL: http://power-service:8080
+      SERVICES_CREW_URL: http://crew-service:8080
     networks:
       - nexus
     depends_on:
@@ -162,7 +187,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health/readiness"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health/readiness"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -172,15 +197,17 @@ services:
     build: ./services/inventory-service
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      OTEL_SDK_DISABLED: "true"
+      OTEL_SDK_DISABLED: "false"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: inventory-service
       CHAOS: ${INVENTORY_CHAOS:-${CHAOS_DEFAULT:-none}}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-nexus}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-nexus}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
-      SERVICES_DOCKING_URL: http://docking-service:8081
-      SERVICES_CREW_URL: http://crew-service:8082
+      SERVICES_DOCKING_URL: http://docking-service:8080
+      SERVICES_CREW_URL: http://crew-service:8080
     networks:
       - nexus
     depends_on:
@@ -189,7 +216,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health/readiness"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health/readiness"]
       interval: 10s
       timeout: 5s
       retries: 5

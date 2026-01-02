@@ -28,7 +28,7 @@ spring:
 
 # Server
 server:
-  port: 8083
+  port: 8080
 
 # Actuator
 management:
@@ -64,4 +64,4 @@ nexus:
 # Downstream services
 services:
   power:
-    url: ${SERVICES_POWER_URL:http://localhost:8084}
+    url: ${SERVICES_POWER_URL:http://localhost:8080}

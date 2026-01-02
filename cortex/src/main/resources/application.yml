@@ -12,15 +12,15 @@ server:
 # Downstream Services
 services:
   docking:
-    url: ${SERVICES_DOCKING_URL:http://localhost:8081}
+    url: ${SERVICES_DOCKING_URL:http://localhost:8080}
   crew:
-    url: ${SERVICES_CREW_URL:http://localhost:8082}
+    url: ${SERVICES_CREW_URL:http://localhost:8080}
   life-support:
-    url: ${SERVICES_LIFE_SUPPORT_URL:http://localhost:8083}
+    url: ${SERVICES_LIFE_SUPPORT_URL:http://localhost:8080}
   power:
-    url: ${SERVICES_POWER_URL:http://localhost:8084}
+    url: ${SERVICES_POWER_URL:http://localhost:8080}
   inventory:
-    url: ${SERVICES_INVENTORY_URL:http://localhost:8085}
+    url: ${SERVICES_INVENTORY_URL:http://localhost:8080}
 
 # Actuator
 management:
