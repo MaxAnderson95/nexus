@@ -1,0 +1,14 @@
+apiVersion: v2
+name: nexus-load-generator
+description: NEXUS Station Load Generator - Locust-based load testing
+type: application
+version: 0.1.0
+appVersion: ""
+sources:
+  - https://github.com/maxanderson95/nexus
+maintainers:
+  - name: Max Anderson
+dependencies:
+  - name: nexus-common
+    version: ">=0.1.0"
+    repository: "file://../nexus-common"

@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "NEXUS Station Load Generator Chart Values",
+  "description": "Schema for validating NEXUS Load Generator Helm chart values",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "nameOverride": {
+      "type": "string",
+      "description": "Override the name of the chart"
+    },
+    "fullnameOverride": {
+      "type": "string",
+      "description": "Override the full name of the release"
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "description": "Image pull secrets",
+      "items": { "type": "string" }
+    },
+    "managedBy": {
+      "type": "string",
+      "description": "Value for the app.kubernetes.io/managed-by label",
+      "default": "Helm"
+    },
+    "global": {
+      "type": "object",
+      "description": "Cross-namespace configuration",
+      "additionalProperties": false,
+      "properties": {
+        "namespaces": {
+          "type": "object",
+          "properties": {
+            "cortex": { "type": "string", "default": "nexus-cortex" }
+          }
+        },
+        "services": {
+          "type": "object",
+          "properties": {
+            "cortex": { "type": "string", "default": "cortex" }
+          }
+        },
+        "ports": {
+          "type": "object",
+          "properties": {
+            "services": { "type": "integer", "default": 80 }
+          }
+        }
+      }
+    },
+    "otel": {
+      "type": "object",
+      "description": "OpenTelemetry configuration",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "sdkDisabled": { "type": "boolean", "default": false },
+        "endpoint": { "type": "string" },
+        "protocol": { "type": "string", "enum": ["grpc", "http/protobuf"] },
+        "insecure": { "type": "boolean", "default": true }
+      }
+    },
+    "users": {
+      "type": "integer",
+      "description": "Number of simulated users",
+      "minimum": 1,
+      "default": 10
+    },
+    "spawnRate": {
+      "type": "integer",
+      "description": "User spawn rate per second",
+      "minimum": 1,
+      "default": 1
+    },
+    "image": {
+      "$ref": "#/$defs/imageConfig"
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["ClusterIP", "NodePort", "LoadBalancer"],
+          "default": "ClusterIP"
+        },
+        "port": { "type": "integer", "default": 8089 },
+        "containerPort": { "type": "integer", "default": 8089 }
+      }
+    },
+    "resources": {
+      "$ref": "#/$defs/resources"
+    },
+    "nexus-common": {
+      "type": "object",
+      "description": "Library chart dependency values (managed by Helm)"
+    }
+  },
+  "$defs": {
+    "imageConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "registry": { "type": "string" },
+        "repository": { "type": "string" },
+        "pullPolicy": {
+          "type": "string",
+          "enum": ["Always", "IfNotPresent", "Never"],
+          "default": "Always"
+        },
+        "tag": { "type": "string" }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requests": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cpu": { "type": "string", "pattern": "^[0-9]+m?$" },
+            "memory": { "type": "string", "pattern": "^[0-9]+(Ki|Mi|Gi)?$" }
+          }
+        },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cpu": { "type": "string", "pattern": "^[0-9]+m?$" },
+            "memory": { "type": "string", "pattern": "^[0-9]+(Ki|Mi|Gi)?$" }
+          }
+        }
+      }
+    }
+  }
+}

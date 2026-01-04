@@ -1,0 +1,44 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  labels:
+    {{- include "nexus-infra.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+data:
+  init.sql: |
+    -- NEXUS STATION Database Initialization
+    -- Creates schemas for each service with appropriate permissions
+
+    -- Create schemas for each service
+    CREATE SCHEMA IF NOT EXISTS power;
+    CREATE SCHEMA IF NOT EXISTS life_support;
+    CREATE SCHEMA IF NOT EXISTS crew;
+    CREATE SCHEMA IF NOT EXISTS docking;
+    CREATE SCHEMA IF NOT EXISTS inventory;
+
+    -- Grant permissions to the nexus user
+    GRANT ALL PRIVILEGES ON SCHEMA power TO {{ .Values.postgres.auth.username }};
+    GRANT ALL PRIVILEGES ON SCHEMA life_support TO {{ .Values.postgres.auth.username }};
+    GRANT ALL PRIVILEGES ON SCHEMA crew TO {{ .Values.postgres.auth.username }};
+    GRANT ALL PRIVILEGES ON SCHEMA docking TO {{ .Values.postgres.auth.username }};
+    GRANT ALL PRIVILEGES ON SCHEMA inventory TO {{ .Values.postgres.auth.username }};
+
+    -- Grant default privileges for future tables
+    ALTER DEFAULT PRIVILEGES IN SCHEMA power GRANT ALL ON TABLES TO {{ .Values.postgres.auth.username }};
+    ALTER DEFAULT PRIVILEGES IN SCHEMA life_support GRANT ALL ON TABLES TO {{ .Values.postgres.auth.username }};
+    ALTER DEFAULT PRIVILEGES IN SCHEMA crew GRANT ALL ON TABLES TO {{ .Values.postgres.auth.username }};
+    ALTER DEFAULT PRIVILEGES IN SCHEMA docking GRANT ALL ON TABLES TO {{ .Values.postgres.auth.username }};
+    ALTER DEFAULT PRIVILEGES IN SCHEMA inventory GRANT ALL ON TABLES TO {{ .Values.postgres.auth.username }};
+
+    ALTER DEFAULT PRIVILEGES IN SCHEMA power GRANT ALL ON SEQUENCES TO {{ .Values.postgres.auth.username }};
+    ALTER DEFAULT PRIVILEGES IN SCHEMA life_support GRANT ALL ON SEQUENCES TO {{ .Values.postgres.auth.username }};
+    ALTER DEFAULT PRIVILEGES IN SCHEMA crew GRANT ALL ON SEQUENCES TO {{ .Values.postgres.auth.username }};
+    ALTER DEFAULT PRIVILEGES IN SCHEMA docking GRANT ALL ON SEQUENCES TO {{ .Values.postgres.auth.username }};
+    ALTER DEFAULT PRIVILEGES IN SCHEMA inventory GRANT ALL ON SEQUENCES TO {{ .Values.postgres.auth.username }};
+{{- end }}

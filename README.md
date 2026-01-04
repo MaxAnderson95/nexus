@@ -288,8 +288,18 @@ nexus_station/
 │   ├── inventory-service/
 │   ├── life-support-service/
 │   └── power-service/
-├── charts/nexus-station/      # Kubernetes deployment
+├── charts/                    # Helm charts (one per service)
+│   ├── nexus-common/          # Shared library chart
+│   ├── nexus-infra/           # PostgreSQL + Redis
+│   ├── nexus-power/
+│   ├── nexus-life-support/
+│   ├── nexus-crew/
+│   ├── nexus-docking/
+│   ├── nexus-inventory/
+│   ├── nexus-cortex/
+│   └── nexus-load-generator/
 ├── load-generator/            # Locust load tests
+├── helmfile.yaml              # Multi-namespace orchestration
 └── docker-compose.yml
 ```
 
@@ -344,56 +354,114 @@ npm run lint
 
 ## Kubernetes Deployment
 
+### Architecture: Multi-Namespace Design
+
+Each microservice is deployed to its own Kubernetes namespace. This design mirrors real-world enterprise deployments where teams independently own and operate their services (e.g., via ArgoCD).
+
+```
+Namespaces:
+  nexus-infra        → PostgreSQL + Redis (shared infrastructure)
+  nexus-power        → Power Service
+  nexus-life-support → Life Support Service
+  nexus-crew         → Crew Service
+  nexus-docking      → Docking Service
+  nexus-inventory    → Inventory Service
+  nexus-cortex       → Cortex BFF + Frontend
+  nexus-load-gen     → Load Generator (optional)
+```
+
+Services communicate across namespaces using Kubernetes DNS FQDNs (e.g., `power.nexus-power.svc.cluster.local`).
+
 ### Prerequisites
 
 - Kubernetes cluster (1.25+)
 - Helm 3
-- Container registry access
+- [Helmfile](https://github.com/helmfile/helmfile)
+- Container images published to a registry
 
-### Deploy with Helm
+### Deploy with Helmfile
+
+Helmfile orchestrates deployment of all charts in the correct dependency order.
 
 ```bash
-# Build and push images
-docker build -t your-registry/cortex:0.1.0 ./services/cortex
-docker build -t your-registry/power-service:0.1.0 ./services/power-service
-# ... repeat for other services
+# Deploy all services to their namespaces
+helmfile apply
 
-# Install
-helm install nexus-station ./charts/nexus-station \
-  --set global.imageRegistry=your-registry
+# Deploy with load generator enabled
+ENABLE_LOAD_GENERATOR=true helmfile apply
 
-# With OpenTelemetry enabled
-helm install nexus-station ./charts/nexus-station \
-  --set global.otel.disabled=false
+# Deploy a specific service only
+helmfile -l name=power apply
 
-# With chaos enabled
-helm install nexus-station ./charts/nexus-station \
-  --set global.chaos.enabled=true \
-  --set global.chaos.errorRate=0.1
+# Preview what will be deployed
+helmfile diff
+
+# Destroy all releases
+helmfile destroy
 ```
 
-### Helm Values
+### Deploy Individual Charts
 
-Key configuration options in `values.yaml`:
+Each service can also be deployed independently with Helm:
+
+```bash
+# Deploy infrastructure first
+helm install infra ./charts/nexus-infra -n nexus-infra --create-namespace
+
+# Then deploy services
+helm install power ./charts/nexus-power -n nexus-power --create-namespace
+helm install life-support ./charts/nexus-life-support -n nexus-life-support --create-namespace
+# ... etc
+```
+
+### Configuration
+
+Each chart has its own `values.yaml`. Common configuration options:
 
 ```yaml
+# Cross-namespace service discovery
 global:
-  otel:
-    disabled: false       # Enable OTel for K8s
-  chaos:
-    enabled: false
-    errorRate: 0.0
-    latencyMs: 0
+  namespaces:
+    infra: nexus-infra
+    power: nexus-power
+    # ... other namespaces
+  ports:
+    services: 80
 
-cortex:
-  replicaCount: 2
-  resources:
-    limits:
-      memory: 512Mi
+# Database credentials
+database:
+  name: nexus
+  username: nexus
+  password: nexus_password
 
-loadGenerator:
-  enabled: false
-  users: 10
+# OpenTelemetry (three modes)
+otel:
+  enabled: false      # Manual OTEL config
+  sdkDisabled: false  # Set true to disable OTEL entirely
+
+# Chaos engineering
+chaos:
+  level: none  # none, low, medium, high
+
+# Container image
+image:
+  registry: ghcr.io
+  repository: maxanderson95/nexus/power-service
+  tag: ""  # Defaults to chart appVersion
+```
+
+### Production Deployment
+
+For production, override sensitive values:
+
+```bash
+# Using Helmfile with environment
+POSTGRES_PASSWORD=secure-password helmfile -e production apply
+
+# Or with Helm directly
+helm install power ./charts/nexus-power -n nexus-power \
+  --set database.password=secure-password \
+  --set image.tag=v1.0.0
 ```
 
 ## Observability
@@ -404,15 +472,15 @@ OpenTelemetry is disabled by default in Docker Compose (`OTEL_SDK_DISABLED=true`
 
 ### Kubernetes
 
-When deployed to Kubernetes with `global.otel.disabled=false`:
+OpenTelemetry can be configured in three modes per chart:
 
-- Traces are exported via OTLP
-- Spans include service dependencies
-- Custom spans for business operations (when `customTelemetry.enabled=true`)
+1. **Dash0 mode** (default): `otel.enabled=false`, `otel.sdkDisabled=false` - Dash0 operator injects configuration
+2. **Disabled mode**: `otel.sdkDisabled=true` - No telemetry exported
+3. **Manual mode**: `otel.enabled=true` - Configure endpoint/protocol manually
 
 Recommended setup:
 
-- OpenTelemetry Operator for auto-instrumentation
+- OpenTelemetry Operator or Dash0 for auto-instrumentation
 - Jaeger, Tempo, or similar for trace visualization
 - Prometheus for metrics
 

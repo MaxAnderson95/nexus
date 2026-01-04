@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: load-generator
+  labels:
+    {{- include "nexus-load-generator.labels" . | nindent 4 }}
+    app.kubernetes.io/component: load-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "nexus-load-generator.selectorLabels" (dict "context" . "component" "load-generator") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "nexus-load-generator.selectorLabels" (dict "context" . "component" "load-generator") | nindent 8 }}
+    spec:
+      {{- include "nexus-load-generator.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: load-generator
+          image: {{ include "nexus-load-generator.image" (dict "context" . "image" .Values.image) | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.containerPort }}
+              protocol: TCP
+          env:
+            - name: LOCUST_HOST
+              value: {{ include "nexus-load-generator.cortexUrl" . | quote }}
+            - name: LOCUST_USERS
+              value: {{ .Values.users | quote }}
+            - name: LOCUST_SPAWN_RATE
+              value: {{ .Values.spawnRate | quote }}
+            {{- include "nexus-common.otelEnv" . | nindent 12 }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}

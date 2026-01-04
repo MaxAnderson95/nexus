@@ -1,0 +1,42 @@
+# NEXUS Station Load Generator Chart Values
+
+nameOverride: ""
+fullnameOverride: ""
+imagePullSecrets: []
+managedBy: Helm
+
+# Cross-namespace configuration
+global:
+  namespaces:
+    cortex: nexus-cortex
+  services:
+    cortex: cortex
+  ports:
+    services: 80
+
+# OpenTelemetry configuration
+otel:
+  enabled: false
+  sdkDisabled: false
+  endpoint: "http://otel-collector:4317"
+  protocol: "grpc"
+  insecure: true
+
+# Number of simulated users
+users: 10
+
+# User spawn rate per second
+spawnRate: 1
+
+image:
+  registry: "ghcr.io"
+  repository: "maxanderson95/nexus/load-generator"
+  pullPolicy: Always
+  tag: ""
+
+service:
+  type: ClusterIP
+  port: 8089
+  containerPort: 8089
+
+resources: {}

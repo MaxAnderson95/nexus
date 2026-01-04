@@ -1,0 +1,9 @@
+apiVersion: v2
+name: nexus-common
+description: Shared templates and helpers for NEXUS Station Helm charts
+type: library
+version: 0.1.0
+sources:
+  - https://github.com/maxanderson95/nexus
+maintainers:
+  - name: Max Anderson

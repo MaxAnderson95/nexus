@@ -1,0 +1,103 @@
+# NEXUS Station Power Service Chart Values
+
+# Override chart name
+nameOverride: ""
+fullnameOverride: ""
+
+# Image pull secrets for private registries
+imagePullSecrets: []
+
+# Managed-by label value
+managedBy: Helm
+
+# Enable JSON structured logging
+enableJSONLogging: false
+
+# Cross-namespace configuration
+global:
+  namespaces:
+    infra: nexus-infra
+  services:
+    postgres: postgres
+    redis: redis
+  ports:
+    postgres: 5432
+    redis: 6379
+
+# Database configuration
+database:
+  name: nexus
+  username: nexus
+  password: nexus_password
+  schema: power
+
+# OpenTelemetry configuration
+otel:
+  enabled: false
+  sdkDisabled: false
+  endpoint: "http://otel-collector:4317"
+  protocol: "grpc"
+  insecure: true
+
+# Chaos engineering
+chaos:
+  level: none
+
+# Number of pod replicas
+replicaCount: 1
+
+# Number of old ReplicaSets to retain for rollback
+revisionHistoryLimit: 3
+
+# Rolling update strategy
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 0%
+    maxSurge: 100%
+
+# Container image configuration
+image:
+  registry: "ghcr.io"
+  repository: "maxanderson95/nexus/power-service"
+  pullPolicy: Always
+  tag: ""
+
+# Additional annotations to add to pods
+podAnnotations: {}
+
+# Additional labels to add to pods
+podLabels: {}
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 80
+  containerPort: 8080
+
+# Container resource configuration
+resources: {}
+
+# Liveness probe configuration
+livenessProbe:
+  httpGet:
+    path: /actuator/health/liveness
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Readiness probe configuration
+readinessProbe:
+  httpGet:
+    path: /actuator/health/readiness
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  successThreshold: 1
+  failureThreshold: 3
+
+# Additional environment variables
+env: []

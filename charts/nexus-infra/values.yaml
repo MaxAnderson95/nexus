@@ -1,0 +1,46 @@
+# NEXUS Station Infrastructure Chart Values
+# Deploys PostgreSQL and Redis for use by all NEXUS services
+
+# Override chart name
+nameOverride: ""
+fullnameOverride: ""
+
+# Image pull secrets for private registries
+imagePullSecrets: []
+
+# Managed-by label value
+managedBy: Helm
+
+# PostgreSQL Configuration
+postgres:
+  enabled: true
+  image:
+    registry: ""
+    repository: postgres
+    tag: "15-alpine"
+    pullPolicy: IfNotPresent
+  auth:
+    database: nexus
+    username: nexus
+    password: nexus_password
+  service:
+    type: ClusterIP
+    port: 5432
+  persistence:
+    enabled: true
+    storageClass: ""
+    size: 10Gi
+  resources: {}
+
+# Redis Configuration
+redis:
+  enabled: true
+  image:
+    registry: ""
+    repository: redis
+    tag: "7-alpine"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 6379
+  resources: {}
