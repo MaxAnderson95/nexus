@@ -153,17 +153,17 @@ public class PowerService {
     
     private AllocationResponse performAllocation(AllocationRequest request) {
         log.info("Allocating {} kW to system: {}", request.amountKw(), request.system());
-        
-        // Check available power
+
+        // Initial check for available power (fast-fail for obvious insufficiency)
         PowerGridStatus grid = buildGridStatus();
         if (grid.availableKw() < request.amountKw()) {
             throw new InsufficientPowerException(
-                    "Insufficient power available. Requested: " + request.amountKw() + 
+                    "Insufficient power available. Requested: " + request.amountKw() +
                     " kW, Available: " + grid.availableKw() + " kW");
         }
-        
-        // Create or update allocation
-        PowerAllocation allocation = allocationRepository.findBySystemName(request.system())
+
+        // Create or update allocation with pessimistic lock to prevent race conditions
+        PowerAllocation allocation = allocationRepository.findBySystemNameWithLock(request.system())
                 .map(existing -> {
                     existing.setAllocatedKw(existing.getAllocatedKw() + request.amountKw());
                     if (request.priority() != null) {
@@ -179,7 +179,22 @@ public class PowerService {
                     newAllocation.setSectionId(request.sectionId());
                     return newAllocation;
                 });
-        
+
+        // Re-validate available power after acquiring lock to prevent race conditions
+        // This ensures that concurrent requests don't over-allocate
+        PowerGridStatus gridAfterLock = buildGridStatus();
+        double availableAfterLock = gridAfterLock.availableKw();
+        // For existing allocations, the amount is already counted, so we don't need to subtract again
+        // For new allocations, we need to check if there's enough room for this amount
+        boolean isNewAllocation = allocation.getId() == null;
+        double effectiveAvailable = isNewAllocation ? availableAfterLock : availableAfterLock + request.amountKw();
+
+        if (effectiveAvailable < request.amountKw()) {
+            throw new InsufficientPowerException(
+                    "Insufficient power available after lock. Requested: " + request.amountKw() +
+                    " kW, Available: " + effectiveAvailable + " kW");
+        }
+
         allocation = allocationRepository.save(allocation);
         
         // Log the action

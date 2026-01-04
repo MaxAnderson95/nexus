@@ -159,10 +159,11 @@ public class InventoryService {
     
     private SupplyDto performConsumeSupply(ConsumeRequest request) {
         log.info("Consuming {} units of supply ID: {}", request.quantity(), request.supplyId());
-        
-        Supply supply = supplyRepository.findById(request.supplyId())
+
+        // Use pessimistic lock to prevent race conditions on quantity
+        Supply supply = supplyRepository.findByIdWithLock(request.supplyId())
                 .orElseThrow(() -> new SupplyNotFoundException("Supply not found: " + request.supplyId()));
-        
+
         if (supply.getQuantity() < request.quantity()) {
             throw new InsufficientSupplyException(
                     "Insufficient quantity. Available: " + supply.getQuantity() + 

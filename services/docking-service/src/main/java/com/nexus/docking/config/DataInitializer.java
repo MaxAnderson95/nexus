@@ -11,52 +11,89 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 @Component
 public class DataInitializer implements ApplicationRunner {
-    
+
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
-    
+    private static final String INIT_LOCK_KEY = "init:lock:docking";
+    private static final Duration LOCK_TTL = Duration.ofMinutes(5);
+    private static final Duration LOCK_WAIT_TIMEOUT = Duration.ofSeconds(30);
+
     private final DockingBayRepository bayRepository;
     private final ShipRepository shipRepository;
     private final DockingLogRepository logRepository;
     private final EntityManager entityManager;
-    
-    public DataInitializer(DockingBayRepository bayRepository, 
+    private final RedisTemplate<String, String> redisTemplate;
+
+    public DataInitializer(DockingBayRepository bayRepository,
                           ShipRepository shipRepository,
                           DockingLogRepository logRepository,
-                          EntityManager entityManager) {
+                          EntityManager entityManager,
+                          RedisTemplate<String, String> redisTemplate) {
         this.bayRepository = bayRepository;
         this.shipRepository = shipRepository;
         this.logRepository = logRepository;
         this.entityManager = entityManager;
+        this.redisTemplate = redisTemplate;
     }
-    
+
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
         log.info("Checking demo data for Docking Service...");
-        
-        if (shipRepository.count() == 0) {
-            log.info("Initializing ships...");
-            initializeShips();
-        } else {
-            log.info("Ships already exist, skipping initialization");
+
+        RedisDistributedLock lock = new RedisDistributedLock(redisTemplate, INIT_LOCK_KEY, LOCK_TTL);
+
+        if (!lock.tryAcquire()) {
+            log.info("Another instance is initializing data, waiting for completion...");
+            waitForInitCompletion(lock);
+            log.info("Docking Service demo data check complete (initialized by another instance)");
+            return;
         }
-        
-        if (bayRepository.count() == 0) {
-            log.info("Initializing docking bays...");
-            initializeDockingBays();
-        } else {
-            log.info("Docking bays already exist, skipping initialization");
+
+        try {
+            if (shipRepository.count() == 0) {
+                log.info("Initializing ships...");
+                initializeShips();
+            } else {
+                log.info("Ships already exist, skipping initialization");
+            }
+
+            if (bayRepository.count() == 0) {
+                log.info("Initializing docking bays...");
+                initializeDockingBays();
+            } else {
+                log.info("Docking bays already exist, skipping initialization");
+            }
+        } finally {
+            lock.release();
         }
-        
+
         log.info("Docking Service demo data check complete");
+    }
+
+    private void waitForInitCompletion(RedisDistributedLock lock) {
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < LOCK_WAIT_TIMEOUT.toMillis()) {
+            try {
+                Thread.sleep(500);
+                if (!lock.isLocked()) {
+                    return;
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+        log.warn("Timeout waiting for initialization lock to be released");
     }
     
     /**
