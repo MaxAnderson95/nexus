@@ -48,6 +48,7 @@ spec:
               value: "cortex"
             {{- include "nexus-station.commonEnv" . | nindent 12 }}
             {{- include "nexus-station.otelEnv" . | nindent 12 }}
+            {{- include "nexus-station.chaosEnv" (dict "context" . "serviceOverride" .Values.chaos.cortex) | nindent 12 }}
             - name: SERVICES_DOCKING_URL
               value: "http://{{ include "nexus-station.fullname" . }}-docking-service:{{ .Values.dockingService.service.port }}"
             - name: SERVICES_CREW_URL

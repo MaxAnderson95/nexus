@@ -48,6 +48,7 @@ spec:
               value: "power-service"
             {{- include "nexus-station.commonEnv" . | nindent 12 }}
             {{- include "nexus-station.otelEnv" . | nindent 12 }}
+            {{- include "nexus-station.chaosEnv" (dict "context" . "serviceOverride" .Values.chaos.power) | nindent 12 }}
             {{- with .Values.powerService.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
