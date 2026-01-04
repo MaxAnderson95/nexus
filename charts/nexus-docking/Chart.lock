@@ -1,0 +1,6 @@
+dependencies:
+- name: nexus-common
+  repository: file://../nexus-common
+  version: 0.1.0
+digest: sha256:cc7e087f6c9ce79bd32ef4cc877bcd490a31afffc2dc06543fa1f938d6a8767a
+generated: "2026-01-04T17:36:43.075279-05:00"

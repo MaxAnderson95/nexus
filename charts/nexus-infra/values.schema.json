@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "NEXUS Station Infrastructure Chart Values",
+  "description": "Schema for validating NEXUS Station infrastructure Helm chart values",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "nameOverride": {
+      "type": "string",
+      "description": "Override the name of the chart"
+    },
+    "fullnameOverride": {
+      "type": "string",
+      "description": "Override the full name of the release"
+    },
+    "managedBy": {
+      "type": "string",
+      "description": "Value for the app.kubernetes.io/managed-by label",
+      "default": "Helm"
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "description": "Image pull secrets for all components",
+      "items": {
+        "type": "string"
+      }
+    },
+    "postgres": {
+      "type": "object",
+      "description": "PostgreSQL database configuration",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable deployment of PostgreSQL",
+          "default": true
+        },
+        "image": {
+          "$ref": "#/$defs/imageConfig"
+        },
+        "auth": {
+          "type": "object",
+          "description": "Authentication configuration",
+          "additionalProperties": false,
+          "properties": {
+            "database": {
+              "type": "string",
+              "description": "Database name",
+              "default": "nexus"
+            },
+            "username": {
+              "type": "string",
+              "description": "Database username",
+              "default": "nexus"
+            },
+            "password": {
+              "type": "string",
+              "description": "Database password"
+            }
+          }
+        },
+        "service": {
+          "type": "object",
+          "description": "Service configuration",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["ClusterIP", "NodePort", "LoadBalancer"],
+              "default": "ClusterIP"
+            },
+            "port": {
+              "type": "integer",
+              "description": "Service port",
+              "default": 5432
+            }
+          }
+        },
+        "persistence": {
+          "type": "object",
+          "description": "Persistence configuration",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable persistent storage",
+              "default": true
+            },
+            "size": {
+              "type": "string",
+              "description": "Storage size",
+              "pattern": "^[0-9]+(Gi|Mi|Ti)$",
+              "default": "10Gi"
+            },
+            "storageClass": {
+              "type": "string",
+              "description": "Storage class name"
+            }
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/resources"
+        }
+      }
+    },
+    "redis": {
+      "type": "object",
+      "description": "Redis cache configuration",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable deployment of Redis",
+          "default": true
+        },
+        "image": {
+          "$ref": "#/$defs/imageConfig"
+        },
+        "service": {
+          "type": "object",
+          "description": "Service configuration",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["ClusterIP", "NodePort", "LoadBalancer"],
+              "default": "ClusterIP"
+            },
+            "port": {
+              "type": "integer",
+              "description": "Service port",
+              "default": 6379
+            }
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/resources"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "imageConfig": {
+      "type": "object",
+      "description": "Container image configuration",
+      "additionalProperties": false,
+      "properties": {
+        "registry": {
+          "type": "string",
+          "description": "Container registry hostname"
+        },
+        "repository": {
+          "type": "string",
+          "description": "Repository path within the registry"
+        },
+        "pullPolicy": {
+          "type": "string",
+          "description": "Image pull policy",
+          "enum": ["Always", "IfNotPresent", "Never"],
+          "default": "IfNotPresent"
+        },
+        "tag": {
+          "type": "string",
+          "description": "Image tag"
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "description": "Container resource configuration",
+      "additionalProperties": false,
+      "properties": {
+        "requests": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "CPU request",
+              "pattern": "^[0-9]+m?$"
+            },
+            "memory": {
+              "type": "string",
+              "description": "Memory request",
+              "pattern": "^[0-9]+(Ki|Mi|Gi)?$"
+            }
+          }
+        },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "CPU limit",
+              "pattern": "^[0-9]+m?$"
+            },
+            "memory": {
+              "type": "string",
+              "description": "Memory limit",
+              "pattern": "^[0-9]+(Ki|Mi|Gi)?$"
+            }
+          }
+        }
+      }
+    }
+  }
+}

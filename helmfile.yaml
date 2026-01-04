@@ -1,0 +1,132 @@
+# Helmfile for NEXUS Station Multi-Namespace Deployment
+#
+# Usage:
+#   helmfile apply                              # Deploy all services
+#   helmfile -l name=power apply                # Deploy single service
+#   helmfile destroy                            # Remove all services
+#   ENABLE_LOAD_GENERATOR=true helmfile apply   # Include load generator
+#
+# Prerequisites:
+#   - Helm 3.x
+#   - Helmfile (https://github.com/helmfile/helmfile)
+#   - kubectl configured for target cluster
+
+helmDefaults:
+  createNamespace: true
+  wait: true
+  timeout: 300
+  atomic: true
+
+# Common values applied to all releases
+commonLabels:
+  app.kubernetes.io/part-of: nexus-station
+
+environments:
+  default:
+    values:
+      - imageTag: ""
+      - postgresPassword: "nexus_password"
+  production:
+    values:
+      - imageTag: "v1.0.0"
+      - postgresPassword: '{{ requiredEnv "POSTGRES_PASSWORD" }}'
+
+---
+releases:
+  # Infrastructure (PostgreSQL + Redis) - must be deployed first
+  - name: infra
+    namespace: nexus-infra
+    chart: ./charts/nexus-infra
+    values:
+      - postgres:
+          auth:
+            password: {{ .Values.postgresPassword }}
+
+  # Power Service - base service with no service dependencies
+  - name: power
+    namespace: nexus-power
+    chart: ./charts/nexus-power
+    needs:
+      - nexus-infra/infra
+    values:
+      - image:
+          tag: {{ .Values.imageTag }}
+      - database:
+          password: {{ .Values.postgresPassword }}
+
+  # Life Support Service - depends on power
+  - name: life-support
+    namespace: nexus-life-support
+    chart: ./charts/nexus-life-support
+    needs:
+      - nexus-infra/infra
+      - nexus-power/power
+    values:
+      - image:
+          tag: {{ .Values.imageTag }}
+      - database:
+          password: {{ .Values.postgresPassword }}
+
+  # Crew Service - depends on life-support
+  - name: crew
+    namespace: nexus-crew
+    chart: ./charts/nexus-crew
+    needs:
+      - nexus-infra/infra
+      - nexus-life-support/life-support
+    values:
+      - image:
+          tag: {{ .Values.imageTag }}
+      - database:
+          password: {{ .Values.postgresPassword }}
+
+  # Inventory Service - depends on crew (and docking, but deployed together)
+  - name: inventory
+    namespace: nexus-inventory
+    chart: ./charts/nexus-inventory
+    needs:
+      - nexus-infra/infra
+      - nexus-crew/crew
+    values:
+      - image:
+          tag: {{ .Values.imageTag }}
+      - database:
+          password: {{ .Values.postgresPassword }}
+
+  # Docking Service - depends on power, crew, inventory
+  - name: docking
+    namespace: nexus-docking
+    chart: ./charts/nexus-docking
+    needs:
+      - nexus-infra/infra
+      - nexus-power/power
+      - nexus-crew/crew
+      - nexus-inventory/inventory
+    values:
+      - image:
+          tag: {{ .Values.imageTag }}
+      - database:
+          password: {{ .Values.postgresPassword }}
+
+  # Cortex (BFF + Frontend) - depends on all backend services
+  - name: cortex
+    namespace: nexus-cortex
+    chart: ./charts/nexus-cortex
+    needs:
+      - nexus-docking/docking
+    values:
+      - image:
+          tag: {{ .Values.imageTag }}
+      - database:
+          password: {{ .Values.postgresPassword }}
+
+  # Load Generator (optional) - depends on cortex
+  - name: load-generator
+    namespace: nexus-load-gen
+    chart: ./charts/nexus-load-generator
+    installed: {{ env "ENABLE_LOAD_GENERATOR" | default "false" }}
+    needs:
+      - nexus-cortex/cortex
+    values:
+      - image:
+          tag: {{ .Values.imageTag }}

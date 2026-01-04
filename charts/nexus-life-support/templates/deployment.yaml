@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: life-support
+  labels:
+    {{- include "nexus-life-support.labels" . | nindent 4 }}
+    app.kubernetes.io/component: life-support
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  strategy:
+    {{- toYaml .Values.strategy | nindent 4 }}
+  selector:
+    matchLabels:
+      {{- include "nexus-life-support.selectorLabels" (dict "context" . "component" "life-support") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "nexus-life-support.selectorLabels" (dict "context" . "component" "life-support") | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- include "nexus-life-support.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: life-support
+          image: {{ include "nexus-life-support.image" (dict "context" . "image" .Values.image) | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.containerPort }}
+              protocol: TCP
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: SERVICE_NAME
+              value: "life-support-service"
+            - name: SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA
+              value: {{ .Values.database.schema | quote }}
+            {{- include "nexus-common.loggingEnv" . | nindent 12 }}
+            {{- include "nexus-common.podEnv" . | nindent 12 }}
+            {{- include "nexus-common.databaseEnv" . | nindent 12 }}
+            {{- include "nexus-common.redisEnv" . | nindent 12 }}
+            {{- include "nexus-common.otelEnv" . | nindent 12 }}
+            {{- include "nexus-common.chaosEnv" . | nindent 12 }}
+            - name: SERVICES_POWER_URL
+              value: {{ include "nexus-life-support.powerUrl" . | quote }}
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}

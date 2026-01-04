@@ -1,0 +1,270 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "NEXUS Station Power Service Chart Values",
+  "description": "Schema for validating NEXUS Power Service Helm chart values",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "nameOverride": {
+      "type": "string",
+      "description": "Override the name of the chart"
+    },
+    "fullnameOverride": {
+      "type": "string",
+      "description": "Override the full name of the release"
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "description": "Image pull secrets",
+      "items": { "type": "string" }
+    },
+    "managedBy": {
+      "type": "string",
+      "description": "Value for the app.kubernetes.io/managed-by label",
+      "default": "Helm"
+    },
+    "enableJSONLogging": {
+      "type": "boolean",
+      "description": "Enable JSON structured logging",
+      "default": false
+    },
+    "global": {
+      "type": "object",
+      "description": "Cross-namespace configuration",
+      "additionalProperties": false,
+      "properties": {
+        "namespaces": {
+          "type": "object",
+          "properties": {
+            "infra": { "type": "string", "default": "nexus-infra" }
+          }
+        },
+        "services": {
+          "type": "object",
+          "properties": {
+            "postgres": { "type": "string", "default": "postgres" },
+            "redis": { "type": "string", "default": "redis" }
+          }
+        },
+        "ports": {
+          "type": "object",
+          "properties": {
+            "postgres": { "type": "integer", "default": 5432 },
+            "redis": { "type": "integer", "default": 6379 }
+          }
+        }
+      }
+    },
+    "database": {
+      "type": "object",
+      "description": "Database configuration",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "default": "nexus" },
+        "username": { "type": "string", "default": "nexus" },
+        "password": { "type": "string" },
+        "schema": { "type": "string", "default": "power" }
+      }
+    },
+    "otel": {
+      "type": "object",
+      "description": "OpenTelemetry configuration",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "sdkDisabled": { "type": "boolean", "default": false },
+        "endpoint": { "type": "string" },
+        "protocol": { "type": "string", "enum": ["grpc", "http/protobuf"] },
+        "insecure": { "type": "boolean", "default": true }
+      }
+    },
+    "chaos": {
+      "type": "object",
+      "description": "Chaos engineering configuration",
+      "additionalProperties": false,
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["none", "low", "medium", "high"],
+          "default": "none"
+        }
+      }
+    },
+    "replicaCount": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 1
+    },
+    "revisionHistoryLimit": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 3
+    },
+    "strategy": {
+      "$ref": "#/$defs/deploymentStrategy"
+    },
+    "image": {
+      "$ref": "#/$defs/imageConfig"
+    },
+    "podAnnotations": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "podLabels": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["ClusterIP", "NodePort", "LoadBalancer"],
+          "default": "ClusterIP"
+        },
+        "port": { "type": "integer", "default": 80 },
+        "containerPort": { "type": "integer", "default": 8080 }
+      }
+    },
+    "resources": {
+      "$ref": "#/$defs/resources"
+    },
+    "livenessProbe": {
+      "$ref": "#/$defs/httpProbe"
+    },
+    "readinessProbe": {
+      "$ref": "#/$defs/httpProbe"
+    },
+    "env": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/envVar" }
+    },
+    "nexus-common": {
+      "type": "object",
+      "description": "Library chart dependency values (managed by Helm)"
+    }
+  },
+  "$defs": {
+    "imageConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "registry": { "type": "string" },
+        "repository": { "type": "string" },
+        "pullPolicy": {
+          "type": "string",
+          "enum": ["Always", "IfNotPresent", "Never"],
+          "default": "Always"
+        },
+        "tag": { "type": "string" }
+      }
+    },
+    "deploymentStrategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["RollingUpdate", "Recreate"],
+          "default": "RollingUpdate"
+        },
+        "rollingUpdate": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "maxUnavailable": {
+              "oneOf": [
+                { "type": "integer", "minimum": 0 },
+                { "type": "string", "pattern": "^[0-9]+%$" }
+              ]
+            },
+            "maxSurge": {
+              "oneOf": [
+                { "type": "integer", "minimum": 0 },
+                { "type": "string", "pattern": "^[0-9]+%$" }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requests": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cpu": { "type": "string", "pattern": "^[0-9]+m?$" },
+            "memory": { "type": "string", "pattern": "^[0-9]+(Ki|Mi|Gi)?$" }
+          }
+        },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cpu": { "type": "string", "pattern": "^[0-9]+m?$" },
+            "memory": { "type": "string", "pattern": "^[0-9]+(Ki|Mi|Gi)?$" }
+          }
+        }
+      }
+    },
+    "httpProbe": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "httpGet": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "path": { "type": "string" },
+            "port": { "oneOf": [{ "type": "integer" }, { "type": "string" }] },
+            "scheme": { "type": "string", "enum": ["HTTP", "HTTPS"] }
+          }
+        },
+        "initialDelaySeconds": { "type": "integer", "minimum": 0 },
+        "periodSeconds": { "type": "integer", "minimum": 1 },
+        "timeoutSeconds": { "type": "integer", "minimum": 1 },
+        "successThreshold": { "type": "integer", "minimum": 1 },
+        "failureThreshold": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "envVar": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "value": { "type": "string" },
+        "valueFrom": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "secretKeyRef": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "key": { "type": "string" }
+              }
+            },
+            "configMapKeyRef": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "key": { "type": "string" }
+              }
+            },
+            "fieldRef": {
+              "type": "object",
+              "properties": {
+                "fieldPath": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

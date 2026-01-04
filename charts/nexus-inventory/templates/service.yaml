@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory
+  labels:
+    {{- include "nexus-inventory.labels" . | nindent 4 }}
+    app.kubernetes.io/component: inventory
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "nexus-inventory.selectorLabels" (dict "context" . "component" "inventory") | nindent 4 }}
