@@ -60,8 +60,6 @@ logging:
     org.hibernate: INFO
     org.postgresql: INFO
     io.opentelemetry: WARN
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
 # Application
 nexus:

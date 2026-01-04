@@ -237,6 +237,10 @@ Set via environment: `CHAOS_DEFAULT=low` or per-service: `POWER_CHAOS=high`
 | Docking | Power, Crew, Inventory | Bay power allocation, crew notifications, cargo auto-unloading |
 | Inventory | Docking, Crew | Cargo manifest linking, crew for cargo handling |
 
+## Helm Chart
+
+When making any changes to the values.yaml, be sure to update the values.schema.json accordingly to ensure proper validation.
+
 ## Important Files
 
 - `docker-compose.yml` - Local development environment

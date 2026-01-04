@@ -4,6 +4,9 @@ nameOverride: ""
 # -- Override the full name of the release
 fullnameOverride: ""
 
+# -- Enable JSON structured logging (sets LOGGING_STRUCTURED_FORMAT_CONSOLE=logstash)
+enableJSONLogging: false
+
 # -- Value for the app.kubernetes.io/managed-by label across all resources
 managedBy: "Helm"
 
