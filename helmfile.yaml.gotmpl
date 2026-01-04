@@ -16,6 +16,7 @@ helmDefaults:
   wait: true
   timeout: 300
   atomic: true
+  skipDeps: true
 
 # Common values applied to all releases
 commonLabels:
@@ -24,12 +25,12 @@ commonLabels:
 environments:
   default:
     values:
-      - imageTag: ""
+      - imageTag: "latest"
       - postgresPassword: "nexus_password"
   production:
     values:
       - imageTag: "v1.0.0"
-      - postgresPassword: '{{ requiredEnv "POSTGRES_PASSWORD" }}'
+      - postgresPassword: '{{ env "POSTGRES_PASSWORD" | default "nexus_password" }}'
 
 ---
 releases:

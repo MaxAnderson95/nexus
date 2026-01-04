@@ -143,11 +143,25 @@ jobs:
             echo "Successfully created manifests for ${SERVICE}"
           done
 
-  build-chart:
+  build-charts:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        chart:
+          - nexus-common
+          - nexus-infra
+          - nexus-power
+          - nexus-life-support
+          - nexus-crew
+          - nexus-inventory
+          - nexus-docking
+          - nexus-cortex
+          - nexus-load-generator
 
     steps:
       - name: Checkout repository
@@ -157,20 +171,20 @@ jobs:
         uses: azure/setup-helm@v4
 
       - name: Set lowercase chart repository
-        run: echo "CHART_REPO=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/nexus/chart" >> $GITHUB_ENV
+        run: echo "CHART_REPO=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/nexus/charts" >> $GITHUB_ENV
 
       - name: Log in to OCI Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
 
       - name: Package Helm chart
-        run: helm package ./charts/nexus-station --version ${{ inputs.version }} --app-version ${{ inputs.version }}
+        run: helm package ./charts/${{ matrix.chart }} --version ${{ inputs.version }} --app-version ${{ inputs.version }}
 
       - name: Push Helm chart to OCI Registry
-        run: helm push nexus-station-${{ inputs.version }}.tgz oci://${{ env.REGISTRY }}/${{ env.CHART_REPO }}
+        run: helm push ${{ matrix.chart }}-${{ inputs.version }}.tgz oci://${{ env.REGISTRY }}/${{ env.CHART_REPO }}
 
   create-release:
     runs-on: ubuntu-latest
-    needs: [merge-manifests, build-chart]
+    needs: [merge-manifests, build-charts]
     permissions:
       contents: write
 
