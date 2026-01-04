@@ -89,7 +89,8 @@ cortex:
     containerPort: 8080
 
   # -- Cortex container resource configuration
-  resources: {}
+  resources:
+    {}
     # requests:
     #   cpu: "100m"
     #   memory: "128Mi"
@@ -510,6 +511,12 @@ loadGenerator:
 
   # -- User spawn rate per second
   spawnRate: 1
+
+  # -- Service configuration for the Locust web UI
+  service:
+    type: ClusterIP
+    port: 8089
+    containerPort: 8089
 
   # -- Container resource configuration
   resources: {}

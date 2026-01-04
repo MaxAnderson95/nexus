@@ -12,12 +12,11 @@ COPY . .
 # Expose Locust web UI port
 EXPOSE 8089
 
-# Default environment variables for headless mode
-ENV LOCUST_HEADLESS=true
+# Default environment variables
 ENV LOCUST_USERS=2
 ENV LOCUST_SPAWN_RATE=1
 
-# Run Locust with environment variable support for headless mode
-# When LOCUST_HEADLESS=true, locust automatically reads LOCUST_USERS and LOCUST_SPAWN_RATE
-# Redirect output to /dev/null to suppress periodic stats
-CMD locust --host=${LOCUST_HOST:-http://localhost:8080} --web-host=0.0.0.0 >/dev/null 2>&1
+# Run Locust with autostart (keeps web UI available while auto-starting the test)
+# Web UI available on port 8089 for monitoring
+# Redirect output to /dev/null to suppress periodic stats in logs
+CMD locust --web-host=0.0.0.0 --autostart >/dev/null 2>&1

@@ -143,7 +143,7 @@ function Docking() {
             >
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h4 className="font-bold text-2xl font-mono text-cyan-100 tracking-wider">{bay.bayNumber}</h4>
+                  <h4 className="font-bold text-2xl font-mono text-cyan-100 tracking-wider">Bay {bay.bayNumber}</h4>
                   <div className={`text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 rounded w-fit mt-1 ${
                     isAvailable ? 'bg-emerald-500/10 text-emerald-400' :
                     isOccupied ? 'bg-red-500/10 text-red-400' :
