@@ -117,6 +117,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Create and push multi-arch manifests
         run: |
           SERVICES="cortex load-generator power-service life-support-service crew-service docking-service inventory-service"
@@ -127,17 +130,15 @@ jobs:
 
             echo "Creating manifest for ${SERVICE}..."
 
-            # Create manifest with version tag
-            docker manifest create "${IMAGE}:${VERSION}" \
+            # Create and push manifest with version tag
+            docker buildx imagetools create -t "${IMAGE}:${VERSION}" \
               "${IMAGE}:${VERSION}-amd64" \
               "${IMAGE}:${VERSION}-arm64"
-            docker manifest push "${IMAGE}:${VERSION}"
 
-            # Create manifest with latest tag
-            docker manifest create "${IMAGE}:latest" \
+            # Create and push manifest with latest tag
+            docker buildx imagetools create -t "${IMAGE}:latest" \
               "${IMAGE}:${VERSION}-amd64" \
               "${IMAGE}:${VERSION}-arm64"
-            docker manifest push "${IMAGE}:latest"
 
             echo "Successfully created manifests for ${SERVICE}"
           done
