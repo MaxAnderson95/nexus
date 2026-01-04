@@ -49,7 +49,14 @@ Usage: {{ include "nexus-station.image" (dict "context" . "image" .Values.cortex
 {{- define "nexus-station.image" -}}
 {{- $registry := .image.registry | default "" -}}
 {{- $repository := .image.repository -}}
-{{- $tag := .image.tag | default .context.Chart.AppVersion -}}
+{{- $tag := "" -}}
+{{- if .image.tag -}}
+{{- $tag = .image.tag -}}
+{{- else if .context.Chart.AppVersion -}}
+{{- $tag = .context.Chart.AppVersion -}}
+{{- else -}}
+{{- fail "image tag must be specified either via .image.tag in values.yaml or appVersion in Chart.yaml" -}}
+{{- end -}}
 {{- if $registry -}}
 {{- printf "%s/%s:%s" $registry $repository $tag -}}
 {{- else -}}
@@ -81,6 +88,10 @@ Generate PostgreSQL JDBC connection URL
 Common environment variables for all services
 */}}
 {{- define "nexus-station.commonEnv" -}}
+{{- if .Values.enableJSONLogging }}
+- name: LOGGING_STRUCTURED_FORMAT_CONSOLE
+  value: "logstash"
+{{- end }}
 - name: POD_NAME
   valueFrom:
     fieldRef:

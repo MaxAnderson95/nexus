@@ -13,6 +13,11 @@
       "type": "string",
       "description": "Override the full name of the release"
     },
+    "enableJSONLogging": {
+      "type": "boolean",
+      "description": "Enable JSON structured logging (sets LOGGING_STRUCTURED_FORMAT_CONSOLE=logstash)",
+      "default": false
+    },
     "managedBy": {
       "type": "string",
       "description": "Value for the app.kubernetes.io/managed-by label across all resources",

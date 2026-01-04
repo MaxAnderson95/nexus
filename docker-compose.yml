@@ -59,6 +59,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ${LOGGING_STRUCTURED_FORMAT_CONSOLE:-}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       OTEL_SDK_DISABLED: "false"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
@@ -86,6 +87,7 @@ services:
     build: ./services/power-service
     image: ghcr.io/maxanderson95/nexus/power-service:${IMAGE_TAG:-latest}
     environment:
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ${LOGGING_STRUCTURED_FORMAT_CONSOLE:-}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       OTEL_SDK_DISABLED: "false"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
@@ -114,6 +116,7 @@ services:
     build: ./services/life-support-service
     image: ghcr.io/maxanderson95/nexus/life-support-service:${IMAGE_TAG:-latest}
     environment:
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ${LOGGING_STRUCTURED_FORMAT_CONSOLE:-}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       OTEL_SDK_DISABLED: "false"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
@@ -143,6 +146,7 @@ services:
     build: ./services/crew-service
     image: ghcr.io/maxanderson95/nexus/crew-service:${IMAGE_TAG:-latest}
     environment:
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ${LOGGING_STRUCTURED_FORMAT_CONSOLE:-}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       OTEL_SDK_DISABLED: "false"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
@@ -172,6 +176,7 @@ services:
     build: ./services/docking-service
     image: ghcr.io/maxanderson95/nexus/docking-service:${IMAGE_TAG:-latest}
     environment:
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ${LOGGING_STRUCTURED_FORMAT_CONSOLE:-}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       OTEL_SDK_DISABLED: "false"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
@@ -203,6 +208,7 @@ services:
     build: ./services/inventory-service
     image: ghcr.io/maxanderson95/nexus/inventory-service:${IMAGE_TAG:-latest}
     environment:
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ${LOGGING_STRUCTURED_FORMAT_CONSOLE:-}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       OTEL_SDK_DISABLED: "false"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
