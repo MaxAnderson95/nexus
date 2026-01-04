@@ -263,6 +263,28 @@
           "minimum": 1,
           "default": 1
         },
+        "service": {
+          "type": "object",
+          "description": "Service configuration for the Locust web UI",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["ClusterIP", "NodePort", "LoadBalancer"],
+              "default": "ClusterIP"
+            },
+            "port": {
+              "type": "integer",
+              "description": "Service port",
+              "default": 8089
+            },
+            "containerPort": {
+              "type": "integer",
+              "description": "Container port that Locust listens on",
+              "default": 8089
+            }
+          }
+        },
         "resources": {
           "$ref": "#/$defs/resources"
         }

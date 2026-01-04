@@ -21,12 +21,16 @@ spec:
         - name: load-generator
           image: {{ include "nexus-station.image" (dict "context" . "image" .Values.loadGenerator.image) | quote }}
           imagePullPolicy: {{ .Values.loadGenerator.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.loadGenerator.service.containerPort }}
+              protocol: TCP
           env:
-            - name: TARGET_URL
+            - name: LOCUST_HOST
               value: "http://{{ include "nexus-station.fullname" . }}-cortex:{{ .Values.cortex.service.port }}"
-            - name: USERS
+            - name: LOCUST_USERS
               value: {{ .Values.loadGenerator.users | quote }}
-            - name: SPAWN_RATE
+            - name: LOCUST_SPAWN_RATE
               value: {{ .Values.loadGenerator.spawnRate | quote }}
             {{- include "nexus-station.otelEnv" . | nindent 12 }}
           {{- with .Values.loadGenerator.resources }}

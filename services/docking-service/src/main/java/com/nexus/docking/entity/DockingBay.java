@@ -18,7 +18,7 @@ public class DockingBay {
     @Enumerated(EnumType.STRING)
     private BayStatus status;
     
-    @Column(name = "current_ship_id")
+    @Column(name = "current_ship_id", unique = true)
     private Long currentShipId;
     
     @Column(nullable = false)
