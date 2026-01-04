@@ -118,3 +118,20 @@ jobs:
 
       - name: Push Helm chart to OCI Registry
         run: helm push nexus-station-${{ inputs.version }}.tgz oci://${{ env.REGISTRY }}/${{ env.CHART_REPO }}
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [build-images, build-chart]
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: v${{ inputs.version }}
+          generate_release_notes: true
