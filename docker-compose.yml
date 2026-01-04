@@ -55,6 +55,7 @@ services:
 
   cortex:
     build: ./services/cortex
+    image: ghcr.io/maxanderson95/nexus/cortex:${IMAGE_TAG:-latest}
     ports:
       - "8080:8080"
     environment:
@@ -83,6 +84,7 @@ services:
 
   power-service:
     build: ./services/power-service
+    image: ghcr.io/maxanderson95/nexus/power-service:${IMAGE_TAG:-latest}
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       OTEL_SDK_DISABLED: "false"
@@ -110,6 +112,7 @@ services:
 
   life-support-service:
     build: ./services/life-support-service
+    image: ghcr.io/maxanderson95/nexus/life-support-service:${IMAGE_TAG:-latest}
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       OTEL_SDK_DISABLED: "false"
@@ -138,6 +141,7 @@ services:
 
   crew-service:
     build: ./services/crew-service
+    image: ghcr.io/maxanderson95/nexus/crew-service:${IMAGE_TAG:-latest}
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       OTEL_SDK_DISABLED: "false"
@@ -166,6 +170,7 @@ services:
 
   docking-service:
     build: ./services/docking-service
+    image: ghcr.io/maxanderson95/nexus/docking-service:${IMAGE_TAG:-latest}
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       OTEL_SDK_DISABLED: "false"
@@ -196,6 +201,7 @@ services:
 
   inventory-service:
     build: ./services/inventory-service
+    image: ghcr.io/maxanderson95/nexus/inventory-service:${IMAGE_TAG:-latest}
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       OTEL_SDK_DISABLED: "false"
@@ -229,6 +235,7 @@ services:
 
   load-generator:
     build: ./load-generator
+    image: ghcr.io/maxanderson95/nexus/load-generator:${IMAGE_TAG:-latest}
     environment:
       LOCUST_HOST: http://cortex:8080
       LOCUST_HEADLESS: "true"
