@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,9 +32,10 @@ public class DockingService {
     
     private static final String REDIS_BAYS_AVAILABLE = "docking:bays:available";
     private static final String REDIS_SHIPS_INCOMING = "docking:ships:incoming";
+    private static final String REDIS_SHIP_RETURN_PREFIX = "ship:return:";
     private static final Duration DEPARTURE_DURATION = Duration.ofSeconds(15);
     private static final double POWER_PER_BAY_KW = 50.0;
-    
+
     private final DockingBayRepository bayRepository;
     private final ShipRepository shipRepository;
     private final DockingLogRepository logRepository;
@@ -297,9 +297,12 @@ public class DockingService {
         
         // Update Redis cache
         updateBayCache();
-        
+
+        // Schedule the ship to return as INCOMING after departure duration
+        scheduleShipReturn(shipId, ship.getName());
+
         log.info("Ship '{}' successfully undocked from bay {}", ship.getName(), bay.getBayNumber());
-        return DockResult.success(bay.getId(), shipId, 
+        return DockResult.success(bay.getId(), shipId,
                 String.format("Ship '%s' undocked successfully from bay %d", ship.getName(), bay.getBayNumber()));
     }
     
@@ -367,25 +370,41 @@ public class DockingService {
     }
     
     /**
-     * Scheduled task that transitions ships from DEPARTING back to INCOMING
-     * after they have been departing for the configured duration (15 seconds).
-     * This simulates ships completing their departure and returning for another visit.
+     * Schedules ship return by setting a Redis key with TTL.
+     * When the key expires, the Redis keyspace notification listener
+     * (configured in RedisKeyExpirationConfig) will trigger transitionShipToIncoming().
+     *
+     * This approach is:
+     * - Stateless: survives pod restarts
+     * - Scalable: works with multiple replicas (only one processes via SETNX lock)
+     * - Idle-friendly: no polling, events only on expiration
      */
-    @Scheduled(fixedRate = 5000) // Check every 5 seconds
+    private void scheduleShipReturn(Long shipId, String shipName) {
+        log.info("Scheduling return for ship '{}' (ID: {}) in {} seconds via Redis TTL",
+                shipName, shipId, DEPARTURE_DURATION.getSeconds());
+
+        try {
+            String key = REDIS_SHIP_RETURN_PREFIX + shipId;
+            // Value stores ship name for debugging; TTL triggers the expiration event
+            redisTemplate.opsForValue().set(key, shipName, DEPARTURE_DURATION);
+        } catch (Exception e) {
+            log.error("Failed to schedule ship return in Redis for ship {}: {}", shipId, e.getMessage());
+            // Fallback: transition immediately (better than losing the ship forever)
+            transitionShipToIncoming(shipId);
+        }
+    }
+
     @Transactional
-    public void transitionDepartingShips() {
-        List<Ship> departingShips = shipRepository.findByStatus(Ship.ShipStatus.DEPARTING);
-        Instant threshold = Instant.now().minus(DEPARTURE_DURATION);
-        
-        for (Ship ship : departingShips) {
-            if (ship.getDepartureTime() != null && ship.getDepartureTime().isBefore(threshold)) {
+    public void transitionShipToIncoming(Long shipId) {
+        shipRepository.findById(shipId).ifPresent(ship -> {
+            if (ship.getStatus() == Ship.ShipStatus.DEPARTING) {
                 log.info("Ship '{}' has completed departure, transitioning to INCOMING", ship.getName());
                 ship.setStatus(Ship.ShipStatus.INCOMING);
                 ship.setDepartureTime(null);
                 ship.setArrivalTime(Instant.now());
                 shipRepository.save(ship);
             }
-        }
+        });
     }
     
     // Exception classes

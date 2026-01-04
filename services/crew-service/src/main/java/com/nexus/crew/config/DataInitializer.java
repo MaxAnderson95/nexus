@@ -10,9 +10,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -20,45 +22,80 @@ import java.util.Random;
 
 @Component
 public class DataInitializer implements ApplicationRunner {
-    
+
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
-    
+    private static final String INIT_LOCK_KEY = "init:lock:crew";
+    private static final Duration LOCK_TTL = Duration.ofMinutes(5);
+    private static final Duration LOCK_WAIT_TIMEOUT = Duration.ofSeconds(30);
+
     private final SectionRepository sectionRepository;
     private final CrewMemberRepository crewMemberRepository;
     private final CrewAssignmentRepository crewAssignmentRepository;
     private final EntityManager entityManager;
+    private final RedisTemplate<String, String> redisTemplate;
     private final Random random = new Random();
-    
+
     public DataInitializer(SectionRepository sectionRepository,
                           CrewMemberRepository crewMemberRepository,
                           CrewAssignmentRepository crewAssignmentRepository,
-                          EntityManager entityManager) {
+                          EntityManager entityManager,
+                          RedisTemplate<String, String> redisTemplate) {
         this.sectionRepository = sectionRepository;
         this.crewMemberRepository = crewMemberRepository;
         this.crewAssignmentRepository = crewAssignmentRepository;
         this.entityManager = entityManager;
+        this.redisTemplate = redisTemplate;
     }
-    
+
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
         log.info("Checking demo data for Crew Service...");
-        
-        if (sectionRepository.count() == 0) {
-            log.info("Initializing sections...");
-            initializeSections();
-        } else {
-            log.info("Sections already exist, skipping initialization");
+
+        RedisDistributedLock lock = new RedisDistributedLock(redisTemplate, INIT_LOCK_KEY, LOCK_TTL);
+
+        if (!lock.tryAcquire()) {
+            log.info("Another instance is initializing data, waiting for completion...");
+            waitForInitCompletion(lock);
+            log.info("Crew Service demo data check complete (initialized by another instance)");
+            return;
         }
-        
-        if (crewMemberRepository.count() == 0) {
-            log.info("Initializing crew members...");
-            initializeCrewMembers();
-        } else {
-            log.info("Crew members already exist, skipping initialization");
+
+        try {
+            if (sectionRepository.count() == 0) {
+                log.info("Initializing sections...");
+                initializeSections();
+            } else {
+                log.info("Sections already exist, skipping initialization");
+            }
+
+            if (crewMemberRepository.count() == 0) {
+                log.info("Initializing crew members...");
+                initializeCrewMembers();
+            } else {
+                log.info("Crew members already exist, skipping initialization");
+            }
+        } finally {
+            lock.release();
         }
-        
+
         log.info("Crew Service demo data check complete");
+    }
+
+    private void waitForInitCompletion(RedisDistributedLock lock) {
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < LOCK_WAIT_TIMEOUT.toMillis()) {
+            try {
+                Thread.sleep(500);
+                if (!lock.isLocked()) {
+                    return;
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+        log.warn("Timeout waiting for initialization lock to be released");
     }
     
     /**

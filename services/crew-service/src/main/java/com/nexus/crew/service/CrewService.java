@@ -216,8 +216,9 @@ public class CrewService {
         CrewMember crewMember = crewMemberRepository.findById(request.crewId())
                 .orElseThrow(() -> new CrewNotFoundException(
                         "Crew member not found: " + request.crewId()));
-        
-        Section targetSection = sectionRepository.findById(request.targetSectionId())
+
+        // Use pessimistic lock to prevent race conditions on section capacity
+        Section targetSection = sectionRepository.findByIdWithLock(request.targetSectionId())
                 .orElseThrow(() -> new SectionNotFoundException(
                         "Section not found: " + request.targetSectionId()));
         
@@ -253,7 +254,8 @@ public class CrewService {
 
         // Now update database records - life support has approved the transfer
         if (previousSectionId != null) {
-            Section previousSection = sectionRepository.findById(previousSectionId).orElse(null);
+            // Use pessimistic lock to prevent race conditions
+            Section previousSection = sectionRepository.findByIdWithLock(previousSectionId).orElse(null);
             if (previousSection != null) {
                 previousSection.setCurrentOccupancy(
                         Math.max(0, previousSection.getCurrentOccupancy() - 1));

@@ -11,45 +11,83 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+
 @Component
 public class DataInitializer implements ApplicationRunner {
-    
+
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
-    
+    private static final String INIT_LOCK_KEY = "init:lock:life-support";
+    private static final Duration LOCK_TTL = Duration.ofMinutes(5);
+    private static final Duration LOCK_WAIT_TIMEOUT = Duration.ofSeconds(30);
+
     private final EnvironmentalSettingsRepository settingsRepository;
     private final EnvironmentalReadingRepository readingRepository;
     private final AlertRepository alertRepository;
     private final EntityManager entityManager;
-    
+    private final RedisTemplate<String, String> redisTemplate;
+
     public DataInitializer(
             EnvironmentalSettingsRepository settingsRepository,
             EnvironmentalReadingRepository readingRepository,
             AlertRepository alertRepository,
-            EntityManager entityManager) {
+            EntityManager entityManager,
+            RedisTemplate<String, String> redisTemplate) {
         this.settingsRepository = settingsRepository;
         this.readingRepository = readingRepository;
         this.alertRepository = alertRepository;
         this.entityManager = entityManager;
+        this.redisTemplate = redisTemplate;
     }
-    
+
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
         log.info("Checking demo data for Life Support Service...");
-        
-        if (settingsRepository.count() == 0) {
-            log.info("Initializing environmental settings...");
-            initializeSettings();
-            initializeReadings();
-            initializeAlerts();
-        } else {
-            log.info("Environmental data already exists, skipping initialization");
+
+        RedisDistributedLock lock = new RedisDistributedLock(redisTemplate, INIT_LOCK_KEY, LOCK_TTL);
+
+        if (!lock.tryAcquire()) {
+            log.info("Another instance is initializing data, waiting for completion...");
+            waitForInitCompletion(lock);
+            log.info("Life Support Service demo data check complete (initialized by another instance)");
+            return;
         }
-        
+
+        try {
+            if (settingsRepository.count() == 0) {
+                log.info("Initializing environmental settings...");
+                initializeSettings();
+                initializeReadings();
+                initializeAlerts();
+            } else {
+                log.info("Environmental data already exists, skipping initialization");
+            }
+        } finally {
+            lock.release();
+        }
+
         log.info("Life Support Service demo data check complete");
+    }
+
+    private void waitForInitCompletion(RedisDistributedLock lock) {
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < LOCK_WAIT_TIMEOUT.toMillis()) {
+            try {
+                Thread.sleep(500);
+                if (!lock.isLocked()) {
+                    return;
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+        log.warn("Timeout waiting for initialization lock to be released");
     }
     
     /**

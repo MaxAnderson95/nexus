@@ -196,7 +196,8 @@ public class LifeSupportService {
         log.info("Adjusting capacity for section {}: change = {}", 
                 request.sectionId(), request.occupancyChange());
         
-        EnvironmentalSettings settings = settingsRepository.findBySectionId(request.sectionId())
+        // Use pessimistic lock to prevent race conditions on occupancy
+        EnvironmentalSettings settings = settingsRepository.findBySectionIdWithLock(request.sectionId())
                 .orElseThrow(() -> new SectionNotFoundException("Section not found: " + request.sectionId()));
         
         int newOccupancy = settings.getCurrentOccupancy() + request.occupancyChange();
