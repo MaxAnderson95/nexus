@@ -22,7 +22,7 @@ import java.time.Duration;
  *
  * This approach is:
  * - Stateless: survives pod restarts
- * - Scalable: works with multiple replicas (only one processes via SETNX lock)
+ * - Scalable: works with multiple replicas (only one processes via distributed lock)
  * - Idle-friendly: no polling, events only on expiration
  */
 @Configuration
@@ -54,18 +54,17 @@ public class RedisKeyExpirationConfig {
                     try {
                         Long shipId = Long.parseLong(shipIdStr);
 
-                        // Use SETNX for distributed lock to prevent duplicate processing
+                        // Use distributed lock to prevent duplicate processing across replicas
                         String lockKey = SHIP_RETURN_LOCK_PREFIX + shipId;
-                        Boolean acquired = redisTemplate.opsForValue()
-                                .setIfAbsent(lockKey, "processing", LOCK_TTL);
+                        RedisDistributedLock lock = new RedisDistributedLock(redisTemplate, lockKey, LOCK_TTL);
 
-                        if (Boolean.TRUE.equals(acquired)) {
+                        if (lock.tryAcquire()) {
                             log.info("Processing ship return for ship ID: {} (acquired lock)", shipId);
                             try {
                                 dockingService.transitionShipToIncoming(shipId);
                             } finally {
-                                // Lock will auto-expire, but clean up on success
-                                redisTemplate.delete(lockKey);
+                                // Safe release - only deletes if we own the lock
+                                lock.release();
                             }
                         } else {
                             log.debug("Skipping ship return for ship ID: {} (lock held by another instance)", shipId);

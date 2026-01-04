@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.UUID;
 
 @Component
 public class DataInitializer implements ApplicationRunner {
@@ -33,7 +32,6 @@ public class DataInitializer implements ApplicationRunner {
     private final DockingLogRepository logRepository;
     private final EntityManager entityManager;
     private final RedisTemplate<String, String> redisTemplate;
-    private final String instanceId;
 
     public DataInitializer(DockingBayRepository bayRepository,
                           ShipRepository shipRepository,
@@ -45,7 +43,6 @@ public class DataInitializer implements ApplicationRunner {
         this.logRepository = logRepository;
         this.entityManager = entityManager;
         this.redisTemplate = redisTemplate;
-        this.instanceId = UUID.randomUUID().toString().substring(0, 8);
     }
 
     @Override
@@ -53,9 +50,11 @@ public class DataInitializer implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         log.info("Checking demo data for Docking Service...");
 
-        if (!acquireInitLock()) {
+        RedisDistributedLock lock = new RedisDistributedLock(redisTemplate, INIT_LOCK_KEY, LOCK_TTL);
+
+        if (!lock.tryAcquire()) {
             log.info("Another instance is initializing data, waiting for completion...");
-            waitForInitCompletion();
+            waitForInitCompletion(lock);
             log.info("Docking Service demo data check complete (initialized by another instance)");
             return;
         }
@@ -75,37 +74,18 @@ public class DataInitializer implements ApplicationRunner {
                 log.info("Docking bays already exist, skipping initialization");
             }
         } finally {
-            releaseInitLock();
+            lock.release();
         }
 
         log.info("Docking Service demo data check complete");
     }
 
-    private boolean acquireInitLock() {
-        try {
-            Boolean acquired = redisTemplate.opsForValue()
-                    .setIfAbsent(INIT_LOCK_KEY, instanceId, LOCK_TTL);
-            return Boolean.TRUE.equals(acquired);
-        } catch (Exception e) {
-            log.warn("Failed to acquire Redis lock, proceeding without lock: {}", e.getMessage());
-            return true;
-        }
-    }
-
-    private void releaseInitLock() {
-        try {
-            redisTemplate.delete(INIT_LOCK_KEY);
-        } catch (Exception e) {
-            log.warn("Failed to release Redis lock: {}", e.getMessage());
-        }
-    }
-
-    private void waitForInitCompletion() {
+    private void waitForInitCompletion(RedisDistributedLock lock) {
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < LOCK_WAIT_TIMEOUT.toMillis()) {
             try {
                 Thread.sleep(500);
-                if (!Boolean.TRUE.equals(redisTemplate.hasKey(INIT_LOCK_KEY))) {
+                if (!lock.isLocked()) {
                     return;
                 }
             } catch (InterruptedException e) {
