@@ -27,6 +27,23 @@ otel:
   # -- Use insecure connection (only used when enabled=true)
   insecure: true
 
+# Chaos Engineering configuration
+# Chaos levels affect all endpoints via ChaosInterceptor:
+#   - none: 0% errors, 0ms latency (default)
+#   - low: 5% errors, 200-500ms latency
+#   - medium: 15% errors, 1-3s latency
+#   - high: 30% errors, 3-8s latency
+chaos:
+  # -- Default chaos level applied to all services unless overridden
+  default: "none"
+  # -- Per-service chaos level overrides (leave empty to use default)
+  cortex: ""
+  docking: ""
+  crew: ""
+  lifeSupport: ""
+  power: ""
+  inventory: ""
+
 # Cortex BFF service (includes frontend)
 cortex:
   # -- Enable deployment of the Cortex component

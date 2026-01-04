@@ -48,6 +48,7 @@ spec:
               value: "life-support-service"
             {{- include "nexus-station.commonEnv" . | nindent 12 }}
             {{- include "nexus-station.otelEnv" . | nindent 12 }}
+            {{- include "nexus-station.chaosEnv" (dict "context" . "serviceOverride" .Values.chaos.lifeSupport) | nindent 12 }}
             - name: SERVICES_POWER_URL
               value: "http://{{ include "nexus-station.fullname" . }}-power-service:{{ .Values.powerService.service.port }}"
             {{- with .Values.lifeSupportService.env }}

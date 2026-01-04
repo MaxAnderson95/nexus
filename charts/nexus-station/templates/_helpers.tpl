@@ -135,3 +135,13 @@ Three modes:
 {{- end }}
 {{- end }}
 {{- end }}
+
+{{/*
+Chaos Engineering environment variable
+Usage: {{ include "nexus-station.chaosEnv" (dict "context" . "serviceOverride" .Values.chaos.power) }}
+Uses service-specific override if set, otherwise falls back to default
+*/}}
+{{- define "nexus-station.chaosEnv" -}}
+- name: CHAOS
+  value: {{ .serviceOverride | default .context.Values.chaos.default | quote }}
+{{- end }}
