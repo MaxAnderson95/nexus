@@ -71,17 +71,10 @@ imagePullSecrets:
 {{- end }}
 
 {{/*
-Generate PostgreSQL connection URL
+Generate PostgreSQL JDBC connection URL
 */}}
-{{- define "nexus-station.postgresUrl" -}}
-{{- printf "postgresql://%s:%s@%s-postgres:%d/%s" .Values.postgres.auth.username .Values.postgres.auth.password (include "nexus-station.fullname" .) (int .Values.postgres.service.port) .Values.postgres.auth.database -}}
-{{- end }}
-
-{{/*
-Generate Redis connection URL
-*/}}
-{{- define "nexus-station.redisUrl" -}}
-{{- printf "redis://%s-redis:%d" (include "nexus-station.fullname" .) (int .Values.redis.service.port) -}}
+{{- define "nexus-station.postgresJdbcUrl" -}}
+{{- printf "jdbc:postgresql://%s-postgres:%d/%s" (include "nexus-station.fullname" .) (int .Values.postgres.service.port) .Values.postgres.auth.database -}}
 {{- end }}
 
 {{/*
@@ -105,12 +98,18 @@ Common environment variables for all services
     fieldRef:
       fieldPath: spec.nodeName
 {{- if .Values.postgres.enabled }}
-- name: DATABASE_URL
-  value: {{ include "nexus-station.postgresUrl" . | quote }}
+- name: SPRING_DATASOURCE_URL
+  value: {{ include "nexus-station.postgresJdbcUrl" . | quote }}
+- name: SPRING_DATASOURCE_USERNAME
+  value: {{ .Values.postgres.auth.username | quote }}
+- name: SPRING_DATASOURCE_PASSWORD
+  value: {{ .Values.postgres.auth.password | quote }}
 {{- end }}
 {{- if .Values.redis.enabled }}
-- name: REDIS_URL
-  value: {{ include "nexus-station.redisUrl" . | quote }}
+- name: SPRING_DATA_REDIS_HOST
+  value: "{{ include "nexus-station.fullname" . }}-redis"
+- name: SPRING_DATA_REDIS_PORT
+  value: {{ .Values.redis.service.port | quote }}
 {{- end }}
 {{- end }}
 

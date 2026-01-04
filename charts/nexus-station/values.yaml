@@ -83,7 +83,7 @@ cortex:
   # -- Liveness probe configuration for the Cortex container
   livenessProbe:
     httpGet:
-      path: /health
+      path: /actuator/health/liveness
       port: http
     initialDelaySeconds: 10
     periodSeconds: 10
@@ -93,7 +93,7 @@ cortex:
   # -- Readiness probe configuration for the Cortex container
   readinessProbe:
     httpGet:
-      path: /health
+      path: /actuator/health/readiness
       port: http
     initialDelaySeconds: 5
     periodSeconds: 5
@@ -147,7 +147,7 @@ dockingService:
   # -- Liveness probe configuration
   livenessProbe:
     httpGet:
-      path: /health
+      path: /actuator/health/liveness
       port: http
     initialDelaySeconds: 10
     periodSeconds: 10
@@ -157,7 +157,7 @@ dockingService:
   # -- Readiness probe configuration
   readinessProbe:
     httpGet:
-      path: /health
+      path: /actuator/health/readiness
       port: http
     initialDelaySeconds: 5
     periodSeconds: 5
@@ -211,7 +211,7 @@ crewService:
   # -- Liveness probe configuration
   livenessProbe:
     httpGet:
-      path: /health
+      path: /actuator/health/liveness
       port: http
     initialDelaySeconds: 10
     periodSeconds: 10
@@ -221,7 +221,7 @@ crewService:
   # -- Readiness probe configuration
   readinessProbe:
     httpGet:
-      path: /health
+      path: /actuator/health/readiness
       port: http
     initialDelaySeconds: 5
     periodSeconds: 5
@@ -275,7 +275,7 @@ lifeSupportService:
   # -- Liveness probe configuration
   livenessProbe:
     httpGet:
-      path: /health
+      path: /actuator/health/liveness
       port: http
     initialDelaySeconds: 10
     periodSeconds: 10
@@ -285,7 +285,7 @@ lifeSupportService:
   # -- Readiness probe configuration
   readinessProbe:
     httpGet:
-      path: /health
+      path: /actuator/health/readiness
       port: http
     initialDelaySeconds: 5
     periodSeconds: 5
@@ -339,7 +339,7 @@ powerService:
   # -- Liveness probe configuration
   livenessProbe:
     httpGet:
-      path: /health
+      path: /actuator/health/liveness
       port: http
     initialDelaySeconds: 10
     periodSeconds: 10
@@ -349,7 +349,7 @@ powerService:
   # -- Readiness probe configuration
   readinessProbe:
     httpGet:
-      path: /health
+      path: /actuator/health/readiness
       port: http
     initialDelaySeconds: 5
     periodSeconds: 5
@@ -403,7 +403,7 @@ inventoryService:
   # -- Liveness probe configuration
   livenessProbe:
     httpGet:
-      path: /health
+      path: /actuator/health/liveness
       port: http
     initialDelaySeconds: 10
     periodSeconds: 10
@@ -413,7 +413,7 @@ inventoryService:
   # -- Readiness probe configuration
   readinessProbe:
     httpGet:
-      path: /health
+      path: /actuator/health/readiness
       port: http
     initialDelaySeconds: 5
     periodSeconds: 5
