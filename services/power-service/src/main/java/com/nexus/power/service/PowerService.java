@@ -162,8 +162,8 @@ public class PowerService {
                     " kW, Available: " + grid.availableKw() + " kW");
         }
         
-        // Create or update allocation
-        PowerAllocation allocation = allocationRepository.findBySystemName(request.system())
+        // Create or update allocation with pessimistic lock to prevent race conditions
+        PowerAllocation allocation = allocationRepository.findBySystemNameWithLock(request.system())
                 .map(existing -> {
                     existing.setAllocatedKw(existing.getAllocatedKw() + request.amountKw());
                     if (request.priority() != null) {
