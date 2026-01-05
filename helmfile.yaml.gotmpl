@@ -53,6 +53,9 @@ releases:
     values:
       - image:
           tag: {{ .Values.imageTag }}
+          {{- if eq .Values.imageTag "latest" }}
+          pullPolicy: IfNotPresent
+          {{- end }}
       - database:
           password: {{ .Values.postgresPassword }}
       - dash0Monitoring:
@@ -68,6 +71,9 @@ releases:
     values:
       - image:
           tag: {{ .Values.imageTag }}
+          {{- if eq .Values.imageTag "latest" }}
+          pullPolicy: IfNotPresent
+          {{- end }}
       - database:
           password: {{ .Values.postgresPassword }}
       - dash0Monitoring:
@@ -83,6 +89,9 @@ releases:
     values:
       - image:
           tag: {{ .Values.imageTag }}
+          {{- if eq .Values.imageTag "latest" }}
+          pullPolicy: IfNotPresent
+          {{- end }}
       - database:
           password: {{ .Values.postgresPassword }}
       - dash0Monitoring:
@@ -98,6 +107,9 @@ releases:
     values:
       - image:
           tag: {{ .Values.imageTag }}
+          {{- if eq .Values.imageTag "latest" }}
+          pullPolicy: IfNotPresent
+          {{- end }}
       - database:
           password: {{ .Values.postgresPassword }}
       - dash0Monitoring:
@@ -115,6 +127,9 @@ releases:
     values:
       - image:
           tag: {{ .Values.imageTag }}
+          {{- if eq .Values.imageTag "latest" }}
+          pullPolicy: IfNotPresent
+          {{- end }}
       - database:
           password: {{ .Values.postgresPassword }}
       - dash0Monitoring:
@@ -129,6 +144,9 @@ releases:
     values:
       - image:
           tag: {{ .Values.imageTag }}
+          {{- if eq .Values.imageTag "latest" }}
+          pullPolicy: IfNotPresent
+          {{- end }}
       - database:
           password: {{ .Values.postgresPassword }}
       - dash0Monitoring:
@@ -144,5 +162,8 @@ releases:
     values:
       - image:
           tag: {{ .Values.imageTag }}
+          {{- if eq .Values.imageTag "latest" }}
+          pullPolicy: IfNotPresent
+          {{- end }}
       - dash0Monitoring:
           enabled: true
