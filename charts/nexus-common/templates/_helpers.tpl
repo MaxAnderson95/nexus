@@ -215,3 +215,33 @@ Expects .Values.chaos.level
 - name: CHAOS
   value: {{ .Values.chaos.level | default "none" | quote }}
 {{- end }}
+
+{{/*
+Dash0 Monitoring custom resource
+Usage: {{ include "nexus-common.dash0Monitoring" . }}
+Expects .Values.dash0Monitoring.enabled and .Values.dash0Monitoring.spec
+*/}}
+{{- define "nexus-common.dash0Monitoring" -}}
+{{- if .Values.dash0Monitoring.enabled }}
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0Monitoring
+metadata:
+  name: dash0-monitoring-resource
+  labels:
+    {{- include "nexus-common.labels" . | nindent 4 }}
+spec:
+  {{- $defaultSpec := dict
+    "logCollection" (dict "enabled" false)
+    "filter" (dict
+      "traces" (dict
+        "span" (list
+          "attributes[\"http.route\"] == \"/actuator/health\""
+          "attributes[\"http.route\"] != nil and HasPrefix(attributes[\"http.route\"], \"/actuator/health/\")"
+        )
+      )
+    )
+  }}
+  {{- $mergedSpec := merge (.Values.dash0Monitoring.spec | default dict) $defaultSpec }}
+  {{- toYaml $mergedSpec | nindent 2 }}
+{{- end }}
+{{- end }}

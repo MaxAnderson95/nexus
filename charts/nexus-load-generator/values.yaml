@@ -40,3 +40,8 @@ service:
   containerPort: 8089
 
 resources: {}
+
+# Dash0 Monitoring custom resource
+dash0Monitoring:
+  enabled: false
+  spec: {}
