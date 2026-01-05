@@ -14,7 +14,6 @@ env:
 jobs:
   build-images:
     strategy:
-      fail-fast: false
       matrix:
         service:
           - name: cortex
@@ -150,7 +149,6 @@ jobs:
       packages: write
 
     strategy:
-      fail-fast: false
       matrix:
         chart:
           - nexus-common
@@ -198,3 +196,91 @@ jobs:
           tag_name: v${{ inputs.version }}
           name: v${{ inputs.version }}
           generate_release_notes: true
+
+  cleanup-on-failure:
+    runs-on: ubuntu-latest
+    needs: [build-images, merge-manifests, build-charts, create-release]
+    if: failure()
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set lowercase prefixes
+        run: |
+          echo "IMAGE_PREFIX=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/nexus" >> $GITHUB_ENV
+          echo "CHART_REPO=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/nexus/charts" >> $GITHUB_ENV
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Delete container images
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SERVICES="cortex load-generator power-service life-support-service crew-service docking-service inventory-service"
+          VERSION="${{ inputs.version }}"
+
+          for SERVICE in $SERVICES; do
+            PACKAGE_NAME="nexus/${SERVICE}"
+
+            # Delete platform-specific tags
+            for PLATFORM in amd64 arm64; do
+              TAG="${VERSION}-${PLATFORM}"
+              echo "Attempting to delete ${PACKAGE_NAME}:${TAG}..."
+              gh api -X DELETE "/user/packages/container/${PACKAGE_NAME}/versions" \
+                --jq ".[] | select(.metadata.container.tags | index(\"${TAG}\")) | .id" 2>/dev/null | \
+                xargs -I {} gh api -X DELETE "/user/packages/container/${PACKAGE_NAME}/versions/{}" 2>/dev/null || true
+            done
+
+            # Delete version tag
+            echo "Attempting to delete ${PACKAGE_NAME}:${VERSION}..."
+            gh api "/user/packages/container/${PACKAGE_NAME}/versions" \
+              --jq ".[] | select(.metadata.container.tags | index(\"${VERSION}\")) | .id" 2>/dev/null | \
+              xargs -I {} gh api -X DELETE "/user/packages/container/${PACKAGE_NAME}/versions/{}" 2>/dev/null || true
+          done
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Log in to OCI Registry for Helm
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+      - name: Delete Helm charts
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CHARTS="nexus-common nexus-infra nexus-power nexus-life-support nexus-crew nexus-inventory nexus-docking nexus-cortex nexus-load-generator"
+          VERSION="${{ inputs.version }}"
+
+          for CHART in $CHARTS; do
+            PACKAGE_NAME="nexus/charts/${CHART}"
+            echo "Attempting to delete Helm chart ${PACKAGE_NAME}:${VERSION}..."
+            gh api "/user/packages/container/${PACKAGE_NAME}/versions" \
+              --jq ".[] | select(.metadata.container.tags | index(\"${VERSION}\")) | .id" 2>/dev/null | \
+              xargs -I {} gh api -X DELETE "/user/packages/container/${PACKAGE_NAME}/versions/{}" 2>/dev/null || true
+          done
+
+      - name: Delete GitHub release and tag
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ inputs.version }}"
+
+          # Delete the release if it exists
+          echo "Attempting to delete release v${VERSION}..."
+          gh release delete "v${VERSION}" --yes 2>/dev/null || true
+
+          # Delete the tag if it exists
+          echo "Attempting to delete tag v${VERSION}..."
+          git push origin --delete "v${VERSION}" 2>/dev/null || true
