@@ -22,9 +22,11 @@ import java.util.Map;
 /**
  * Global exception handler for Cortex (public-facing BFF).
  *
- * Security: Internal error details are logged but NOT exposed to clients.
- * Only generic error messages and trace IDs are returned to the frontend.
- * Operators can use the trace ID to look up full details in the tracing system.
+ * Security policy:
+ * - 4xx client errors: Messages are passed through since they contain user-actionable
+ *   business logic information (e.g., "No docking bay available", "Section at capacity")
+ * - 5xx server errors: Messages are sanitized - only generic messages and trace IDs are
+ *   returned. Operators can use the trace ID to look up full details in the tracing system.
  */
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -41,8 +43,8 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Build a sanitized error response for public consumption.
-     * Only includes generic message and trace ID - no internal details.
+     * Build an error response for public consumption.
+     * The message parameter should be user-safe (sanitized for 5xx, business logic for 4xx).
      */
     private Map<String, Object> buildPublicErrorResponse(int status, String error, String message) {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -114,10 +116,11 @@ public class GlobalExceptionHandler {
             log.warn("Downstream client error {}: {}", status, error.message());
         }
 
-        // Return sanitized response to client
+        // 4xx errors are typically user-actionable business logic errors (e.g., "No docking bay available")
+        // Pass through the actual error message so users understand what went wrong
+        String clientMessage = error.message() != null ? error.message() : "Request could not be processed";
         return ResponseEntity.status(status)
-                .body(buildPublicErrorResponse(status.value(), status.getReasonPhrase(),
-                        "Request could not be processed"));
+                .body(buildPublicErrorResponse(status.value(), status.getReasonPhrase(), clientMessage));
     }
 
     @ExceptionHandler(HttpServerErrorException.class)
