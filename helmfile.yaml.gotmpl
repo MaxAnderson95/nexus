@@ -35,6 +35,7 @@ environments:
 ---
 releases:
   # Infrastructure (PostgreSQL + Redis) - must be deployed first
+  # Note: dash0Monitoring not enabled - PostgreSQL/Redis don't benefit from OTel instrumentation
   - name: infra
     namespace: nexus-infra
     chart: ./charts/nexus-infra
@@ -54,6 +55,8 @@ releases:
           tag: {{ .Values.imageTag }}
       - database:
           password: {{ .Values.postgresPassword }}
+      - dash0Monitoring:
+          enabled: true
 
   # Life Support Service - depends on power
   - name: life-support
@@ -67,6 +70,8 @@ releases:
           tag: {{ .Values.imageTag }}
       - database:
           password: {{ .Values.postgresPassword }}
+      - dash0Monitoring:
+          enabled: true
 
   # Crew Service - depends on life-support
   - name: crew
@@ -80,6 +85,8 @@ releases:
           tag: {{ .Values.imageTag }}
       - database:
           password: {{ .Values.postgresPassword }}
+      - dash0Monitoring:
+          enabled: true
 
   # Inventory Service - depends on crew (and docking, but deployed together)
   - name: inventory
@@ -93,6 +100,8 @@ releases:
           tag: {{ .Values.imageTag }}
       - database:
           password: {{ .Values.postgresPassword }}
+      - dash0Monitoring:
+          enabled: true
 
   # Docking Service - depends on power, crew, inventory
   - name: docking
@@ -108,6 +117,8 @@ releases:
           tag: {{ .Values.imageTag }}
       - database:
           password: {{ .Values.postgresPassword }}
+      - dash0Monitoring:
+          enabled: true
 
   # Cortex (BFF + Frontend) - depends on all backend services
   - name: cortex
@@ -120,6 +131,8 @@ releases:
           tag: {{ .Values.imageTag }}
       - database:
           password: {{ .Values.postgresPassword }}
+      - dash0Monitoring:
+          enabled: true
 
   # Load Generator (optional) - depends on cortex
   - name: load-generator
@@ -131,3 +144,5 @@ releases:
     values:
       - image:
           tag: {{ .Values.imageTag }}
+      - dash0Monitoring:
+          enabled: true

@@ -90,4 +90,9 @@ readinessProbe:
   successThreshold: 1
   failureThreshold: 3
 
+# Dash0 Monitoring custom resource
+dash0Monitoring:
+  enabled: false
+  spec: {}
+
 env: []

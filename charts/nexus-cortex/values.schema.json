@@ -150,6 +150,23 @@
       "type": "array",
       "items": { "$ref": "#/$defs/envVar" }
     },
+    "dash0Monitoring": {
+      "type": "object",
+      "description": "Dash0 Monitoring custom resource configuration",
+      "additionalProperties": true,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable Dash0 Monitoring resource",
+          "default": false
+        },
+        "spec": {
+          "type": "object",
+          "description": "Dash0Monitoring spec (validated by operator)",
+          "additionalProperties": true
+        }
+      }
+    },
     "nexus-common": {
       "type": "object",
       "description": "Library chart dependency values (managed by Helm)"
