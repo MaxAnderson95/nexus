@@ -27,10 +27,12 @@ environments:
     values:
       - imageTag: "latest"
       - postgresPassword: "nexus_password"
+      - replicaCount: 2
   production:
     values:
       - imageTag: "v1.0.0"
       - postgresPassword: '{{ env "POSTGRES_PASSWORD" | default "nexus_password" }}'
+      - replicaCount: 1
 
 ---
 releases:
@@ -51,6 +53,7 @@ releases:
     needs:
       - nexus-infra/infra
     values:
+      - replicaCount: {{ .Values.replicaCount }}
       - image:
           tag: {{ .Values.imageTag }}
           {{- if eq .Values.imageTag "latest" }}
@@ -60,6 +63,8 @@ releases:
           password: {{ .Values.postgresPassword }}
       - dash0Monitoring:
           enabled: true
+      - chaos:
+          level: high
 
   # Life Support Service - depends on power
   - name: life-support
@@ -69,6 +74,7 @@ releases:
       - nexus-infra/infra
       - nexus-power/power
     values:
+      - replicaCount: {{ .Values.replicaCount }}
       - image:
           tag: {{ .Values.imageTag }}
           {{- if eq .Values.imageTag "latest" }}
@@ -87,6 +93,7 @@ releases:
       - nexus-infra/infra
       - nexus-life-support/life-support
     values:
+      - replicaCount: {{ .Values.replicaCount }}
       - image:
           tag: {{ .Values.imageTag }}
           {{- if eq .Values.imageTag "latest" }}
@@ -105,6 +112,7 @@ releases:
       - nexus-infra/infra
       - nexus-crew/crew
     values:
+      - replicaCount: {{ .Values.replicaCount }}
       - image:
           tag: {{ .Values.imageTag }}
           {{- if eq .Values.imageTag "latest" }}
@@ -125,6 +133,7 @@ releases:
       - nexus-crew/crew
       - nexus-inventory/inventory
     values:
+      - replicaCount: {{ .Values.replicaCount }}
       - image:
           tag: {{ .Values.imageTag }}
           {{- if eq .Values.imageTag "latest" }}
@@ -142,6 +151,7 @@ releases:
     needs:
       - nexus-docking/docking
     values:
+      - replicaCount: {{ .Values.replicaCount }}
       - image:
           tag: {{ .Values.imageTag }}
           {{- if eq .Values.imageTag "latest" }}
@@ -167,3 +177,4 @@ releases:
           {{- end }}
       - dash0Monitoring:
           enabled: true
+      - users: 2
