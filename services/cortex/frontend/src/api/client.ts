@@ -9,6 +9,7 @@ import type {
   Alert,
   SelfTestResult,
   PowerGridStatus,
+  PowerSourceSummary,
   PowerAllocation,
   Supply,
   CargoManifest,
@@ -89,11 +90,17 @@ export const api = {
     getBays: () => request<DockingBay[]>('/docking/bays'),
     getBay: (id: number) => request<DockingBay>(`/docking/bays/${id}`),
     getShips: () => request<Ship[]>('/docking/ships'),
+    getShip: (id: number) => request<Ship>(`/docking/ships/${id}`),
     getIncomingShips: () => request<Ship[]>('/docking/ships/incoming'),
     dockShip: (shipId: number) =>
       request<{ success: boolean; message: string }>(`/docking/dock/${shipId}`, { method: 'POST' }),
     undockShip: (shipId: number) =>
       request<{ success: boolean; message: string }>(`/docking/undock/${shipId}`, { method: 'POST' }),
+    scheduleDelivery: (shipName: string, cargoType: string, estimatedArrival: string) =>
+      request<Ship>('/docking/schedule-delivery', {
+        method: 'POST',
+        body: JSON.stringify({ shipName, cargoType, estimatedArrival }),
+      }),
     getLogs: () => request<DockingLog[]>('/docking/logs'),
   },
 
@@ -102,7 +109,9 @@ export const api = {
     getRoster: () => request<CrewMember[]>('/crew'),
     getMember: (id: number) => request<CrewMember>(`/crew/${id}`),
     getSections: () => request<Section[]>('/crew/sections'),
+    getSection: (id: number) => request<Section>(`/crew/sections/${id}`),
     getSectionMembers: (sectionId: number) => request<CrewMember[]>(`/crew/section/${sectionId}`),
+    getAvailable: () => request<CrewMember[]>('/crew/available'),
     relocate: (crewId: number, targetSectionId: number) =>
       request<{ message: string }>('/crew/relocate', {
         method: 'POST',
@@ -121,6 +130,7 @@ export const api = {
         body: JSON.stringify(settings),
       }),
     getAlerts: () => request<Alert[]>('/life-support/alerts'),
+    getAllAlerts: () => request<Alert[]>('/life-support/alerts/all'),
     acknowledgeAlert: (alertId: number) =>
       request<Alert>(`/life-support/alerts/${alertId}/acknowledge`, { method: 'POST' }),
     runSelfTest: (sectionId: number) =>
@@ -131,6 +141,7 @@ export const api = {
   power: {
     getGrid: () => request<PowerGridStatus>('/power/grid'),
     getSources: () => request<PowerGridStatus>('/power/sources'),
+    getSource: (id: number) => request<PowerSourceSummary>(`/power/sources/${id}`),
     getAllocations: () => request<PowerAllocation[]>('/power/allocations'),
     allocate: (system: string, amountKw: number, priority?: number) =>
       request<PowerAllocation>('/power/allocate', {
@@ -161,6 +172,7 @@ export const api = {
       }),
     getResupplyRequests: () => request<ResupplyRequest[]>('/inventory/resupply-requests'),
     getManifests: () => request<CargoManifest[]>('/inventory/cargo-manifests'),
+    getManifest: (id: number) => request<CargoManifest>(`/inventory/cargo-manifests/${id}`),
     unloadManifest: (manifestId: number) =>
       request<{ message: string }>(`/inventory/cargo-manifests/${manifestId}/unload`, { method: 'POST' }),
   },
