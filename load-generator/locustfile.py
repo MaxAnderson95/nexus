@@ -540,18 +540,21 @@ class StationOperator(HttpUser):
     - Inventory: supplies (list + detail + low-stock), consume, resupply, manifests (list + detail), unload
     """
 
-    # Wait between 1-5 seconds between tasks
-    wait_time = between(1, 5)
+    # Wait between 60-90 seconds between tasks (~50 requests/hour/user)
+    # Adjust wait times or user count for higher load testing
+    wait_time = between(60, 90)
 
     # Default host (overridden by LOCUST_HOST env var)
     host = "http://nexus.local"
 
     # Task weights determine frequency
+    # Weighted toward power-dependent services for chaos testing demos
+    # Power dependency: Power (direct) -> Life Support, Docking (direct) -> Crew, Inventory (indirect)
     tasks = {
-        DashboardBehavior: 5,      # Most common - checking status
-        DockingBehavior: 3,        # Frequent - ship operations
-        CrewBehavior: 2,           # Moderate - crew management
-        LifeSupportBehavior: 3,    # Higher weight for self-test coverage
-        PowerBehavior: 2,          # Moderate - power management
-        InventoryBehavior: 2,      # Moderate - supply tracking
+        DashboardBehavior: 5,      # Calls power summary - shows cascade effects
+        DockingBehavior: 4,        # Direct power dependency (bay power allocation)
+        CrewBehavior: 1,           # Indirect (via Life Support)
+        LifeSupportBehavior: 4,    # Direct power dependency (environmental systems)
+        PowerBehavior: 4,          # Direct power operations
+        InventoryBehavior: 1,      # Indirect (via Docking)
     }
