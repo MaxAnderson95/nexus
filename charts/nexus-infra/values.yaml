@@ -23,6 +23,12 @@ postgres:
     database: nexus
     username: nexus
     password: nexus_password
+  config:
+    # Maximum number of database connections
+    # Default PostgreSQL is 100, which is insufficient for NEXUS services
+    # Calculation: 5 services × 2 pods (during rollout) × 10 pool size = 100
+    # Plus reserved connections for superuser and init jobs
+    maxConnections: 200
   service:
     type: ClusterIP
     port: 5432
