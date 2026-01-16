@@ -6,11 +6,11 @@ management system. All requests go through the CORTEX BFF at /api/v1/*.
 
 Features tested:
 - Dashboard: full status and individual summaries
-- Docking: view bays/ships, dock/undock ships, view logs
-- Crew: view roster, sections, relocate crew members
-- Life Support: environment monitoring, self-tests, adjustments, alerts
-- Power: grid status, sources, allocate/deallocate power
-- Inventory: supplies, consume, resupply requests, cargo manifests
+- Docking: view bays/ships (list + detail), dock/undock ships, schedule deliveries, view logs
+- Crew: view roster (list + detail), sections (list + detail), available crew, relocate crew
+- Life Support: environment monitoring, self-tests, adjustments, alerts (active + all history)
+- Power: grid status, sources (list + detail), allocations, allocate/deallocate power
+- Inventory: supplies (list + detail + low-stock), consume, resupply, manifests (list + detail), unload
 """
 
 from locust import HttpUser, task, between, SequentialTaskSet
@@ -85,6 +85,19 @@ class DockingBehavior(SequentialTaskSet):
         self.client.get("/api/v1/docking/ships", name="/api/v1/docking/ships")
 
     @task
+    def view_single_ship(self):
+        """View a single ship's details"""
+        response = self.client.get("/api/v1/docking/ships",
+                                   name="/api/v1/docking/ships [ship detail prep]")
+        if response.ok:
+            ships = response.json()
+            if ships and len(ships) > 0:
+                ship_id = random.choice(ships).get("id")
+                if ship_id:
+                    self.client.get(f"/api/v1/docking/ships/{ship_id}",
+                                   name="/api/v1/docking/ships/{id}")
+
+    @task
     def view_incoming(self):
         """View incoming ships"""
         self.client.get("/api/v1/docking/ships/incoming",
@@ -117,6 +130,25 @@ class DockingBehavior(SequentialTaskSet):
                 if ship_id:
                     self.client.post(f"/api/v1/docking/undock/{ship_id}",
                                     name="/api/v1/docking/undock/{id}")
+
+    @task
+    def schedule_delivery(self):
+        """Schedule a new delivery ship"""
+        import time
+        ship_types = ["Cargo", "Supply", "Freighter", "Transport", "Hauler"]
+        cargo_types = ["FOOD", "MEDICAL", "MECHANICAL", "ELECTRONIC", "FUEL", "WATER", "OXYGEN", "GENERAL"]
+        
+        ship_name = f"{random.choice(ship_types)}-{random.randint(100, 999)}"
+        # Schedule arrival 1-24 hours from now
+        arrival_time = int((time.time() + random.randint(3600, 86400)) * 1000)
+        
+        self.client.post("/api/v1/docking/schedule-delivery",
+                        json={
+                            "shipName": ship_name,
+                            "cargoType": random.choice(cargo_types),
+                            "estimatedArrival": arrival_time
+                        },
+                        name="/api/v1/docking/schedule-delivery")
 
     @task
     def view_logs(self):
@@ -162,6 +194,24 @@ class CrewBehavior(SequentialTaskSet):
                 if section_id:
                     self.client.get(f"/api/v1/crew/section/{section_id}",
                                    name="/api/v1/crew/section/{id}")
+
+    @task
+    def view_single_section(self):
+        """View a single section's details"""
+        response = self.client.get("/api/v1/crew/sections",
+                                   name="/api/v1/crew/sections [section detail prep]")
+        if response.ok:
+            sections = response.json()
+            if sections and len(sections) > 0:
+                section_id = random.choice(sections).get("id")
+                if section_id:
+                    self.client.get(f"/api/v1/crew/sections/{section_id}",
+                                   name="/api/v1/crew/sections/{id}")
+
+    @task
+    def view_available_crew(self):
+        """View available crew members"""
+        self.client.get("/api/v1/crew/available", name="/api/v1/crew/available")
 
     @task
     def relocate_crew(self):
@@ -278,6 +328,12 @@ class LifeSupportBehavior(SequentialTaskSet):
                     self.client.post(
                         f"/api/v1/life-support/alerts/{alert_id}/acknowledge",
                         name="/api/v1/life-support/alerts/{id}/acknowledge")
+
+    @task
+    def view_all_alerts(self):
+        """View all alerts including acknowledged ones"""
+        self.client.get("/api/v1/life-support/alerts/all",
+                       name="/api/v1/life-support/alerts/all")
         self.interrupt()
 
 
@@ -293,6 +349,20 @@ class PowerBehavior(SequentialTaskSet):
     def view_sources(self):
         """View power sources"""
         self.client.get("/api/v1/power/sources", name="/api/v1/power/sources")
+
+    @task
+    def view_single_source(self):
+        """View a single power source's details"""
+        response = self.client.get("/api/v1/power/sources",
+                                   name="/api/v1/power/sources [source detail prep]")
+        if response.ok:
+            data = response.json()
+            sources = data.get("sources", [])
+            if sources and len(sources) > 0:
+                source_id = random.choice(sources).get("id")
+                if source_id:
+                    self.client.get(f"/api/v1/power/sources/{source_id}",
+                                   name="/api/v1/power/sources/{id}")
 
     @task
     def view_allocations(self):
@@ -422,6 +492,19 @@ class InventoryBehavior(SequentialTaskSet):
                        name="/api/v1/inventory/cargo-manifests")
 
     @task
+    def view_single_manifest(self):
+        """View a single cargo manifest's details"""
+        response = self.client.get("/api/v1/inventory/cargo-manifests",
+                                   name="/api/v1/inventory/cargo-manifests [manifest detail prep]")
+        if response.ok:
+            manifests = response.json()
+            if manifests and len(manifests) > 0:
+                manifest_id = random.choice(manifests).get("id")
+                if manifest_id:
+                    self.client.get(f"/api/v1/inventory/cargo-manifests/{manifest_id}",
+                                   name="/api/v1/inventory/cargo-manifests/{id}")
+
+    @task
     def unload_manifests(self):
         """Unload pending cargo manifests"""
         response = self.client.get("/api/v1/inventory/cargo-manifests",
@@ -450,11 +533,11 @@ class StationOperator(HttpUser):
 
     All UI interactions covered:
     - Dashboard: full status + individual summaries (docking, crew, life-support, power, inventory)
-    - Docking: view bays/ships (list + detail), dock/undock ships, view logs
-    - Crew: view roster (list + detail), sections, section members, relocate crew
-    - Life Support: environment (all + single section), self-tests, adjustments, alerts
-    - Power: grid status, sources, allocations, allocate/deallocate
-    - Inventory: supplies (list + detail + low-stock), consume, resupply, manifests, unload
+    - Docking: view bays/ships (list + detail), dock/undock ships, schedule deliveries, view logs
+    - Crew: view roster (list + detail), sections (list + detail), available crew, section members, relocate crew
+    - Life Support: environment (all + single section), self-tests, adjustments, alerts (active + all history)
+    - Power: grid status, sources (list + detail), allocations, allocate/deallocate
+    - Inventory: supplies (list + detail + low-stock), consume, resupply, manifests (list + detail), unload
     """
 
     # Wait between 1-5 seconds between tasks
