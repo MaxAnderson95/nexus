@@ -59,6 +59,19 @@
             }
           }
         },
+        "config": {
+          "type": "object",
+          "description": "PostgreSQL server configuration",
+          "additionalProperties": false,
+          "properties": {
+            "maxConnections": {
+              "type": "integer",
+              "description": "Maximum number of database connections. Default PostgreSQL is 100, but NEXUS services require more during rolling updates.",
+              "default": 200,
+              "minimum": 100
+            }
+          }
+        },
         "service": {
           "type": "object",
           "description": "Service configuration",
