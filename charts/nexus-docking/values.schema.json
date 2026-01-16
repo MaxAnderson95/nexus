@@ -167,9 +167,52 @@
     "nexus-common": {
       "type": "object",
       "description": "Library chart dependency values (managed by Helm)"
+    },
+    "extraResources": {
+      "type": "array",
+      "description": "Additional Kubernetes resources to deploy alongside this chart",
+      "items": { "$ref": "#/$defs/kubernetesResource" },
+      "default": []
     }
   },
   "$defs": {
+    "kubernetesResource": {
+      "type": "object",
+      "description": "A Kubernetes resource manifest",
+      "properties": {
+        "apiVersion": {
+          "type": "string",
+          "description": "Kubernetes API version for the resource"
+        },
+        "kind": {
+          "type": "string",
+          "description": "Kubernetes resource kind"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Resource metadata",
+          "properties": {
+            "name": { "type": "string" },
+            "namespace": { "type": "string" },
+            "labels": {
+              "type": "object",
+              "additionalProperties": { "type": "string" }
+            },
+            "annotations": {
+              "type": "object",
+              "additionalProperties": { "type": "string" }
+            }
+          },
+          "additionalProperties": true
+        },
+        "spec": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": ["apiVersion", "kind"],
+      "additionalProperties": true
+    },
     "imageConfig": {
       "type": "object",
       "additionalProperties": false,
