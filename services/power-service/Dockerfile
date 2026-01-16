@@ -1,19 +1,23 @@
 # Build stage
 FROM maven:3.9-eclipse-temurin-17 AS build
+ARG VERSION=0.0.0-dev
 
 WORKDIR /app
 
 # Copy pom.xml first for dependency caching
 COPY pom.xml ./
 
-# Download dependencies (cached layer)
-RUN mvn dependency:go-offline -B
+# Download dependencies (cached via BuildKit mount)
+RUN --mount=type=cache,target=/root/.m2/repository \
+    mvn dependency:go-offline -B
 
 # Copy source code
 COPY src/ src/
 
-# Build the application
-RUN mvn package -DskipTests -B
+# Build the application with version override (reuse cached dependencies)
+RUN --mount=type=cache,target=/root/.m2/repository \
+    mvn versions:set -DnewVersion=${VERSION} -DgenerateBackupPoms=false -q && \
+    mvn package -DskipTests -B
 
 # Runtime stage
 FROM eclipse-temurin:17-jre
