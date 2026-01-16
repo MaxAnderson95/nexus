@@ -245,3 +245,15 @@ spec:
   {{- toYaml $mergedSpec | nindent 2 }}
 {{- end }}
 {{- end }}
+
+{{/*
+Extra Resources
+Renders additional Kubernetes resources defined in .Values.extraResources
+Usage: {{ include "nexus-common.extraResources" . }}
+*/}}
+{{- define "nexus-common.extraResources" -}}
+{{- range .Values.extraResources }}
+---
+{{ toYaml . }}
+{{- end }}
+{{- end }}

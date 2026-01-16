@@ -45,3 +45,13 @@ resources: {}
 dash0Monitoring:
   enabled: false
   spec: {}
+
+# Additional Kubernetes resources to deploy alongside this chart
+# Each item should be a complete Kubernetes resource manifest
+extraResources: []
+#  - apiVersion: v1
+#    kind: ConfigMap
+#    metadata:
+#      name: extra-config
+#    data:
+#      key: value
