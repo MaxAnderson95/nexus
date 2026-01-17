@@ -90,10 +90,25 @@ readinessProbe:
   successThreshold: 1
   failureThreshold: 3
 
-# Dash0 Monitoring custom resource
+# Dash0 Monitoring custom resource (backend)
 dash0Monitoring:
   enabled: false
   spec: {}
+
+# Dash0 Website Monitoring (frontend)
+# Set enabled: true and provide auth token to enable frontend RUM
+dash0Frontend:
+  enabled: false
+  endpoint: "https://ingress.us-east-1.aws.dash0.com"
+  environment: "production"
+  # Auth token for Dash0 ingestion - should be provided via --set or secrets
+  # Create a token at: https://app.dash0.com/settings/auth-tokens
+  # Use a dedicated token with Ingesting permissions only
+  authToken: ""
+  # Alternative: reference a Kubernetes secret
+  # authTokenSecret:
+  #   name: dash0-frontend
+  #   key: auth-token
 
 env: []
 

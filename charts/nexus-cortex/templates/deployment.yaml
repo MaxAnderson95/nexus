@@ -60,6 +60,24 @@ spec:
               value: {{ include "nexus-cortex.dockingUrl" . | quote }}
             - name: SERVICES_INVENTORY_URL
               value: {{ include "nexus-cortex.inventoryUrl" . | quote }}
+            {{- if .Values.dash0Frontend.enabled }}
+            - name: VITE_DASH0_ENABLED
+              value: "true"
+            - name: VITE_DASH0_ENDPOINT_URL
+              value: {{ .Values.dash0Frontend.endpoint | quote }}
+            - name: VITE_DASH0_ENVIRONMENT
+              value: {{ .Values.dash0Frontend.environment | quote }}
+            {{- if .Values.dash0Frontend.authTokenSecret }}
+            - name: VITE_DASH0_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.dash0Frontend.authTokenSecret.name }}
+                  key: {{ .Values.dash0Frontend.authTokenSecret.key }}
+            {{- else }}
+            - name: VITE_DASH0_AUTH_TOKEN
+              value: {{ .Values.dash0Frontend.authToken | quote }}
+            {{- end }}
+            {{- end }}
             {{- with .Values.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
