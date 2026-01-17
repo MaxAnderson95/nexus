@@ -60,17 +60,51 @@
         "insecure": { "type": "boolean", "default": true }
       }
     },
-    "users": {
-      "type": "integer",
-      "description": "Number of simulated users",
-      "minimum": 1,
-      "default": 10
+    "locust": {
+      "type": "object",
+      "description": "Locust HTTP load generator configuration",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "users": { "type": "integer", "minimum": 1, "default": 10 },
+        "spawnRate": { "type": "integer", "minimum": 1, "default": 1 }
+      }
     },
-    "spawnRate": {
-      "type": "integer",
-      "description": "User spawn rate per second",
-      "minimum": 1,
-      "default": 1
+    "rum": {
+      "type": "object",
+      "description": "RUM browser-based load generator configuration",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "browsers": { "type": "integer", "minimum": 1, "default": 2 },
+        "iterations": { "type": "integer", "minimum": 0, "default": 0 },
+        "headless": { "type": "boolean", "default": true },
+        "timing": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "minThinkTime": { "type": "integer", "default": 500 },
+            "maxThinkTime": { "type": "integer", "default": 2000 },
+            "minScenarioWait": { "type": "integer", "default": 3000 },
+            "maxScenarioWait": { "type": "integer", "default": 8000 }
+          }
+        },
+        "scenarioWeights": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "dashboard": { "type": "integer", "default": 30 },
+            "docking": { "type": "integer", "default": 20 },
+            "lifeSupport": { "type": "integer", "default": 15 },
+            "power": { "type": "integer", "default": 15 },
+            "crew": { "type": "integer", "default": 10 },
+            "inventory": { "type": "integer", "default": 10 }
+          }
+        },
+        "resources": { "$ref": "#/$defs/resources" },
+        "shmSize": { "type": "string", "default": "2Gi" },
+        "image": { "$ref": "#/$defs/imageConfig" }
+      }
     },
     "image": {
       "$ref": "#/$defs/imageConfig"

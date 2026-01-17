@@ -1,0 +1,67 @@
+{{- if .Values.rum.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rum-load-generator
+  labels:
+    {{- include "nexus-load-generator.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rum-load-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "nexus-load-generator.selectorLabels" (dict "context" . "component" "rum-load-generator") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "nexus-load-generator.selectorLabels" (dict "context" . "component" "rum-load-generator") | nindent 8 }}
+    spec:
+      {{- include "nexus-load-generator.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: rum-load-generator
+          image: {{ include "nexus-load-generator.image" (dict "context" . "image" .Values.rum.image) | quote }}
+          imagePullPolicy: {{ .Values.rum.image.pullPolicy }}
+          env:
+            - name: TARGET_URL
+              value: {{ include "nexus-load-generator.cortexUrl" . | quote }}
+            - name: BROWSER_COUNT
+              value: {{ .Values.rum.browsers | quote }}
+            - name: ITERATIONS
+              value: {{ .Values.rum.iterations | quote }}
+            - name: HEADLESS
+              value: {{ .Values.rum.headless | quote }}
+            - name: MIN_THINK_TIME
+              value: {{ .Values.rum.timing.minThinkTime | quote }}
+            - name: MAX_THINK_TIME
+              value: {{ .Values.rum.timing.maxThinkTime | quote }}
+            - name: MIN_SCENARIO_WAIT
+              value: {{ .Values.rum.timing.minScenarioWait | quote }}
+            - name: MAX_SCENARIO_WAIT
+              value: {{ .Values.rum.timing.maxScenarioWait | quote }}
+            - name: WEIGHT_DASHBOARD
+              value: {{ .Values.rum.scenarioWeights.dashboard | quote }}
+            - name: WEIGHT_DOCKING
+              value: {{ .Values.rum.scenarioWeights.docking | quote }}
+            - name: WEIGHT_LIFE_SUPPORT
+              value: {{ .Values.rum.scenarioWeights.lifeSupport | quote }}
+            - name: WEIGHT_POWER
+              value: {{ .Values.rum.scenarioWeights.power | quote }}
+            - name: WEIGHT_CREW
+              value: {{ .Values.rum.scenarioWeights.crew | quote }}
+            - name: WEIGHT_INVENTORY
+              value: {{ .Values.rum.scenarioWeights.inventory | quote }}
+            - name: LOG_FORMAT
+              value: "json"
+          {{- with .Values.rum.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: dshm
+              mountPath: /dev/shm
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: {{ .Values.rum.shmSize }}
+{{- end }}

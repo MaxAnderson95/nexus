@@ -260,6 +260,39 @@ services:
     logging:
       driver: "none"
 
+  # =============================================================================
+  # RUM LOAD GENERATOR (optional - use with: docker compose --profile load-rum up)
+  # Playwright-based browser load testing for Real User Monitoring metrics
+  # =============================================================================
+
+  rum-load-generator:
+    build: ./rum-load-generator
+    image: ghcr.io/maxanderson95/nexus/rum-load-generator:${IMAGE_TAG:-latest}
+    environment:
+      TARGET_URL: http://cortex:8080
+      BROWSER_COUNT: ${RUM_BROWSERS:-2}
+      ITERATIONS: ${RUM_ITERATIONS:-0}
+      HEADLESS: "true"
+      MIN_THINK_TIME: 500
+      MAX_THINK_TIME: 2000
+      MIN_SCENARIO_WAIT: 3000
+      MAX_SCENARIO_WAIT: 8000
+      LOG_FORMAT: text
+      WEIGHT_DASHBOARD: 30
+      WEIGHT_DOCKING: 20
+      WEIGHT_LIFE_SUPPORT: 15
+      WEIGHT_POWER: 15
+      WEIGHT_CREW: 10
+      WEIGHT_INVENTORY: 10
+    networks:
+      - nexus
+    profiles:
+      - load-rum
+    depends_on:
+      cortex:
+        condition: service_healthy
+    shm_size: '2gb'
+
 networks:
   nexus:
     driver: bridge
