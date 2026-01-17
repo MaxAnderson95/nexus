@@ -18,25 +18,18 @@ jobs:
         service:
           - name: cortex
             context: ./services/cortex
-            type: maven-frontend
           - name: load-generator
             context: ./load-generator
-            type: python
           - name: power-service
             context: ./services/power-service
-            type: maven
           - name: life-support-service
             context: ./services/life-support-service
-            type: maven
           - name: crew-service
             context: ./services/crew-service
-            type: maven
           - name: docking-service
             context: ./services/docking-service
-            type: maven
           - name: inventory-service
             context: ./services/inventory-service
-            type: maven
         platform:
           - name: amd64
             runner: ubuntu-latest
@@ -55,30 +48,6 @@ jobs:
       - name: Set lowercase image prefix
         run: echo "IMAGE_PREFIX=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/nexus" >> $GITHUB_ENV
 
-      - name: Set up Java
-        if: matrix.service.type == 'maven' || matrix.service.type == 'maven-frontend'
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: 'maven'
-
-      - name: Set up Node
-        if: matrix.service.type == 'maven-frontend'
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Set Maven version
-        if: matrix.service.type == 'maven' || matrix.service.type == 'maven-frontend'
-        working-directory: ${{ matrix.service.context }}
-        run: ./mvnw versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false
-
-      - name: Set npm version
-        if: matrix.service.type == 'maven-frontend'
-        working-directory: ${{ matrix.service.context }}/frontend
-        run: npm version ${{ inputs.version }} --no-git-tag-version --allow-same-version
-
       - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
@@ -96,6 +65,8 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.name }}:${{ inputs.version }}-${{ matrix.platform.name }}
           platforms: linux/${{ matrix.platform.name }}
+          build-args: |
+            VERSION=${{ inputs.version }}
           cache-from: type=gha,scope=${{ matrix.service.name }}-${{ matrix.platform.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}-${{ matrix.platform.name }}
 
