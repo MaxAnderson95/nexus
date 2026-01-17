@@ -1,36 +1,43 @@
 # Frontend build stage
 FROM node:20-alpine AS frontend-build
+ARG VERSION=0.0.0-dev
 
 WORKDIR /frontend
 
 # Copy package files
 COPY frontend/package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies (cached via BuildKit mount)
+RUN --mount=type=cache,target=/root/.npm \
+    npm install
 
 # Copy frontend source
 COPY frontend/ .
 
-# Build the frontend
-RUN npm run build
+# Set version and build the frontend
+RUN npm version ${VERSION} --no-git-tag-version --allow-same-version && \
+    npm run build
 
 # Java build stage
 FROM maven:3.9-eclipse-temurin-17 AS java-build
+ARG VERSION=0.0.0-dev
 
 WORKDIR /app
 
 # Copy pom.xml first for dependency caching
 COPY pom.xml ./
 
-# Download dependencies (cached layer)
-RUN mvn dependency:go-offline -B
+# Download dependencies (cached via BuildKit mount)
+RUN --mount=type=cache,target=/root/.m2/repository \
+    mvn dependency:go-offline -B
 
 # Copy source code
 COPY src/ src/
 
-# Build the application
-RUN mvn package -DskipTests -B
+# Build the application with version override (reuse cached dependencies)
+RUN --mount=type=cache,target=/root/.m2/repository \
+    mvn versions:set -DnewVersion=${VERSION} -DgenerateBackupPoms=false -q && \
+    mvn package -DskipTests -B
 
 # Runtime stage
 FROM eclipse-temurin:17-jre
