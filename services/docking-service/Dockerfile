@@ -4,19 +4,19 @@ ARG VERSION=0.0.0-dev
 
 WORKDIR /app
 
-# Copy pom.xml first for dependency caching
+# Copy pom.xml first for dependency layer caching
+# NOTE: pom.xml in repo must stay at 0.0.0-dev - version set at build time via ARG
 COPY pom.xml ./
 
-# Download dependencies (cached via BuildKit mount)
-RUN --mount=type=cache,target=/root/.m2/repository \
-    mvn dependency:go-offline -B
+# Download dependencies - stored in layer for GHA cache
+# This layer is cached as long as pom.xml doesn't change
+RUN mvn dependency:go-offline -B
 
 # Copy source code
 COPY src/ src/
 
-# Build the application with version override (reuse cached dependencies)
-RUN --mount=type=cache,target=/root/.m2/repository \
-    mvn versions:set -DnewVersion=${VERSION} -DgenerateBackupPoms=false -q && \
+# Set version and build (deps already available from previous layer)
+RUN mvn versions:set -DnewVersion=${VERSION} -DgenerateBackupPoms=false -q && \
     mvn package -DskipTests -B
 
 # Runtime stage
