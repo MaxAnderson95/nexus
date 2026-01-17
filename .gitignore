@@ -76,3 +76,5 @@ logs/
 # Temp files
 tmp/
 temp/
+
+.opencode/
