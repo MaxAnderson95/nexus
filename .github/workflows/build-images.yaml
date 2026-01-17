@@ -67,8 +67,8 @@ jobs:
           platforms: linux/${{ matrix.platform.name }}
           build-args: |
             VERSION=${{ inputs.version }}
-          cache-from: type=gha,scope=${{ matrix.service.name }}-${{ matrix.platform.name }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}-${{ matrix.platform.name }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.name }}:cache-${{ matrix.platform.name }}
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.name }}:cache-${{ matrix.platform.name }},mode=max
 
   merge-manifests:
     runs-on: ubuntu-latest
