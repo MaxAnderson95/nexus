@@ -54,6 +54,10 @@ COPY --from=java-build /app/target/*.jar app.jar
 # Copy frontend static files to serve from Spring Boot
 COPY --from=frontend-build /frontend/dist/ /app/static/
 
+# Copy entrypoint script for runtime env var injection
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
 # Run as non-root user
 RUN groupadd -g 1001 appgroup && useradd -u 1001 -g appgroup appuser
 RUN chown -R appuser:appgroup /app
@@ -61,4 +65,4 @@ USER appuser
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

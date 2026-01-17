@@ -167,6 +167,52 @@
         }
       }
     },
+    "dash0Frontend": {
+      "type": "object",
+      "description": "Dash0 Website Monitoring (frontend RUM) configuration",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable Dash0 frontend website monitoring",
+          "default": false
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "Dash0 OTLP HTTP endpoint URL",
+          "default": "https://ingress.us-east-1.aws.dash0.com"
+        },
+        "environment": {
+          "type": "string",
+          "description": "Deployment environment name (e.g., production, staging)",
+          "default": "production"
+        },
+        "dataset": {
+          "type": "string",
+          "description": "Optional Dash0 dataset name (can also be configured via auth token)"
+        },
+        "authToken": {
+          "type": "string",
+          "description": "Dash0 auth token with Ingesting permissions (use authTokenSecret for production)"
+        },
+        "authTokenSecret": {
+          "type": "object",
+          "description": "Reference to Kubernetes secret containing the auth token",
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Name of the Kubernetes secret"
+            },
+            "key": {
+              "type": "string",
+              "description": "Key within the secret containing the auth token"
+            }
+          },
+          "required": ["name", "key"]
+        }
+      }
+    },
     "nexus-common": {
       "type": "object",
       "description": "Library chart dependency values (managed by Helm)"
