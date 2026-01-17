@@ -5,23 +5,46 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import './index.css'
 
-// Initialize Dash0 Web SDK for website monitoring
-// Must be called before React renders to capture initial page load
-// Set VITE_DASH0_ENABLED=true to enable (disabled by default)
+// Dash0 Web SDK configuration
+// In production, these placeholders are replaced by docker-entrypoint.sh at container startup
+// Using window assignment prevents the minifier from analyzing/removing this code
+declare global {
+  interface Window {
+    __DASH0_CONFIG__?: {
+      enabled: string
+      endpoint: string
+      authToken: string
+      dataset: string
+      environment: string
+    }
+  }
+}
+
+window.__DASH0_CONFIG__ = {
+  enabled: '__VITE_DASH0_ENABLED__',
+  endpoint: '__VITE_DASH0_ENDPOINT_URL__',
+  authToken: '__VITE_DASH0_AUTH_TOKEN__',
+  dataset: '__VITE_DASH0_DATASET__',
+  environment: '__VITE_DASH0_ENVIRONMENT__',
+}
+
+// Initialize Dash0 if properly configured (placeholders replaced with real values)
+const dash0 = window.__DASH0_CONFIG__
 if (
-  import.meta.env.VITE_DASH0_ENABLED === 'true' &&
-  import.meta.env.VITE_DASH0_ENDPOINT_URL &&
-  import.meta.env.VITE_DASH0_AUTH_TOKEN
+  dash0.enabled === 'true' &&
+  dash0.endpoint &&
+  !dash0.endpoint.startsWith('__') &&
+  dash0.authToken &&
+  !dash0.authToken.startsWith('__')
 ) {
   init({
     serviceName: 'nexus-station-frontend',
-    environment: import.meta.env.VITE_DASH0_ENVIRONMENT || 'development',
+    environment: dash0.environment && !dash0.environment.startsWith('__') ? dash0.environment : 'production',
     endpoint: {
-      url: import.meta.env.VITE_DASH0_ENDPOINT_URL,
-      authToken: import.meta.env.VITE_DASH0_AUTH_TOKEN,
-      ...(import.meta.env.VITE_DASH0_DATASET && { dataset: import.meta.env.VITE_DASH0_DATASET }),
+      url: dash0.endpoint,
+      authToken: dash0.authToken,
+      ...(dash0.dataset && !dash0.dataset.startsWith('__') && { dataset: dash0.dataset }),
     },
-    // Enable trace context propagation to correlate frontend requests with backend traces
     propagators: [
       { type: 'traceparent', match: [/.*\/api\/.*/] },
     ],
