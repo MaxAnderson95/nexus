@@ -2,14 +2,17 @@ import type { Page } from 'playwright';
 import { humanDelay } from '../utils/timing.js';
 import { flushRumData } from '../utils/rum-flush.js';
 import { log } from '../utils/logger.js';
+import { loadConfig } from '../config.js';
 
 export abstract class BaseScenario {
   protected page: Page;
   protected browserId: number;
+  protected baseUrl: string;
 
   constructor(page: Page, browserId: number) {
     this.page = page;
     this.browserId = browserId;
+    this.baseUrl = loadConfig().baseUrl;
   }
 
   abstract name: string;
@@ -20,8 +23,9 @@ export abstract class BaseScenario {
   }
 
   protected async navigate(path: string): Promise<void> {
+    const url = `${this.baseUrl}${path}`;
     this.log(`Navigating to ${path}`);
-    await this.page.goto(path);
+    await this.page.goto(url);
     await this.page.waitForLoadState('networkidle');
     await humanDelay(this.page);
   }
