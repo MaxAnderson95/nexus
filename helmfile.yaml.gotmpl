@@ -163,10 +163,12 @@ releases:
           enabled: true
 
   # Load Generator (optional) - depends on cortex
+  # Use ENABLE_LOAD_GENERATOR=true for HTTP load testing (Locust)
+  # Use ENABLE_RUM_LOAD_GENERATOR=true for browser-based RUM load testing (Playwright)
   - name: load-generator
     namespace: nexus-load-gen
     chart: ./charts/nexus-load-generator
-    installed: {{ env "ENABLE_LOAD_GENERATOR" | default "false" }}
+    installed: {{ or (eq (env "ENABLE_LOAD_GENERATOR" | default "false") "true") (eq (env "ENABLE_RUM_LOAD_GENERATOR" | default "false") "true") }}
     needs:
       - nexus-cortex/cortex
     values:
@@ -177,4 +179,9 @@ releases:
           {{- end }}
       - dash0Monitoring:
           enabled: true
-      - users: 2
+      - locust:
+          enabled: {{ env "ENABLE_LOAD_GENERATOR" | default "false" }}
+          users: 2
+      - rum:
+          enabled: {{ env "ENABLE_RUM_LOAD_GENERATOR" | default "false" }}
+          browsers: {{ env "RUM_BROWSERS" | default "2" }}

@@ -22,11 +22,58 @@ otel:
   protocol: "grpc"
   insecure: true
 
-# Number of simulated users
-users: 10
+# Locust HTTP Load Generator Configuration
+locust:
+  # Enable the Locust HTTP-based load generator
+  enabled: true
+  # Number of simulated users
+  users: 10
+  # User spawn rate per second
+  spawnRate: 1
 
-# User spawn rate per second
-spawnRate: 1
+# RUM (Browser-based) Load Generator Configuration
+rum:
+  # Enable the Playwright browser-based load generator for RUM metrics
+  enabled: false
+  # Number of concurrent browser instances
+  browsers: 2
+  # Number of scenario iterations per browser (0 = infinite)
+  iterations: 0
+  # Run browsers in headless mode
+  headless: true
+  # Timing configuration (milliseconds)
+  timing:
+    # Minimum delay between actions (simulates user think time)
+    minThinkTime: 500
+    # Maximum delay between actions
+    maxThinkTime: 2000
+    # Minimum wait between scenarios
+    minScenarioWait: 3000
+    # Maximum wait between scenarios
+    maxScenarioWait: 8000
+  # Scenario weights (higher = more likely to be selected)
+  scenarioWeights:
+    dashboard: 30
+    docking: 20
+    lifeSupport: 15
+    power: 15
+    crew: 10
+    inventory: 10
+  # Resource configuration for browser processes
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "500m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+  # Shared memory size for Playwright browsers
+  shmSize: "2Gi"
+  image:
+    registry: "ghcr.io"
+    repository: "maxanderson95/nexus/rum-load-generator"
+    pullPolicy: Always
+    tag: ""
 
 image:
   registry: "ghcr.io"

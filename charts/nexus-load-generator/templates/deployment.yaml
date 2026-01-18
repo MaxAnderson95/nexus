@@ -1,3 +1,4 @@
+{{- if .Values.locust.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,11 +29,12 @@ spec:
             - name: LOCUST_HOST
               value: {{ include "nexus-load-generator.cortexUrl" . | quote }}
             - name: LOCUST_USERS
-              value: {{ .Values.users | quote }}
+              value: {{ .Values.locust.users | quote }}
             - name: LOCUST_SPAWN_RATE
-              value: {{ .Values.spawnRate | quote }}
+              value: {{ .Values.locust.spawnRate | quote }}
             {{- include "nexus-common.otelEnv" . | nindent 12 }}
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+{{- end }}
