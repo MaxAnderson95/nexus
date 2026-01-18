@@ -1,5 +1,6 @@
 import type { Page } from 'playwright';
 import { loadConfig } from '../config.js';
+import { log } from './logger.js';
 
 /**
  * Ensures RUM data is flushed before browser/page closes.
@@ -19,8 +20,9 @@ export async function flushRumData(page: Page): Promise<void> {
 
     // Wait for any pending network requests to complete
     await page.waitForLoadState('networkidle', { timeout: config.rumFlushTimeout });
-  } catch {
+  } catch (error) {
     // Log but don't fail - some data may still have been sent
+    log('rum-flush', 0, 'RUM flush warning', { error: error instanceof Error ? error.message : String(error) });
   }
 
   // Additional wait to ensure async sends complete

@@ -75,7 +75,12 @@ export class BrowserPool {
     });
 
     const page = await context.newPage();
+    this.attachPageListeners(page, id);
 
+    return { id, browser, context, page, running: true };
+  }
+
+  private attachPageListeners(page: Page, id: number): void {
     // Add console logging from browser
     page.on('console', (msg) => {
       if (msg.type() === 'error') {
@@ -87,8 +92,6 @@ export class BrowserPool {
     page.on('pageerror', (error) => {
       log('browser', id, `Page error: ${error.message}`);
     });
-
-    return { id, browser, context, page, running: true };
   }
 
   private async runBrowserLoop(instance: BrowserInstance): Promise<void> {
@@ -131,6 +134,7 @@ export class BrowserPool {
           log('pool', instance.id, 'Recreating page after error');
           await instance.page.close().catch(() => {});
           instance.page = await instance.context.newPage();
+          this.attachPageListeners(instance.page, instance.id);
         }
       }
     }
