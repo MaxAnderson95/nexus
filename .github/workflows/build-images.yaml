@@ -30,6 +30,8 @@ jobs:
             context: ./services/docking-service
           - name: inventory-service
             context: ./services/inventory-service
+          - name: rum-load-generator
+            context: ./rum-load-generator
         platform:
           - name: amd64
             runner: ubuntu-latest
@@ -87,6 +89,7 @@ jobs:
           - crew-service
           - docking-service
           - inventory-service
+          - rum-load-generator
 
     steps:
       - name: Set lowercase image prefix
@@ -205,7 +208,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          SERVICES="cortex load-generator power-service life-support-service crew-service docking-service inventory-service"
+          SERVICES="cortex load-generator power-service life-support-service crew-service docking-service inventory-service rum-load-generator"
           VERSION="${{ inputs.version }}"
 
           for SERVICE in $SERVICES; do
