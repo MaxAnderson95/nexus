@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { api, extractErrorInfo } from '../api/client';
 import type { EnvironmentStatus, Alert, SelfTestResult } from '../types';
 import { Card } from '../components/ui/Card';
-import { ErrorAlert, type ErrorInfo } from '../components/ui/ErrorAlert';
+import type { ErrorInfo } from '../components/ui/ErrorAlert';
+import { useErrorToast } from '../context/ErrorToastContext';
 import {
   ThermometerSun,
   Wind,
@@ -22,7 +23,8 @@ function LifeSupport() {
   const [environment, setEnvironment] = useState<EnvironmentStatus[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<ErrorInfo | null>(null);
+  const [loadError, setLoadError] = useState<ErrorInfo | null>(null);
+  const { showError } = useErrorToast();
   
   // Self-test state
   const [testingSections, setTestingSections] = useState<Record<number, boolean>>({});
@@ -50,9 +52,11 @@ function LifeSupport() {
       setEnvironment(envData);
       setAlerts(alertsData);
       // Only clear error on successful load if it was a manual refresh
-      if (init) setError(null);
+      if (init) setLoadError(null);
     } catch (err) {
-      setError(extractErrorInfo(err, 'Failed to load life support data'));
+      const errorInfo = extractErrorInfo(err, 'Failed to load life support data');
+      setLoadError(errorInfo);
+      showError(errorInfo);
     } finally {
       if (init) setLoading(false);
     }
@@ -63,7 +67,7 @@ function LifeSupport() {
       await api.lifeSupport.acknowledgeAlert(alertId);
       await loadData(false);
     } catch (err) {
-      setError(extractErrorInfo(err, 'Failed to acknowledge alert'));
+      showError(extractErrorInfo(err, 'Failed to acknowledge alert'));
     }
   }
 
@@ -71,11 +75,10 @@ function LifeSupport() {
     try {
       setTestingSections(prev => ({ ...prev, [sectionId]: true }));
       setTestResult(null);
-      setError(null);
       const result = await api.lifeSupport.runSelfTest(sectionId);
       setTestResult(result);
     } catch (err) {
-      setError(extractErrorInfo(err, 'Self-test failed'));
+      showError(extractErrorInfo(err, 'Self-test failed'));
     } finally {
       setTestingSections(prev => ({ ...prev, [sectionId]: false }));
     }
@@ -92,7 +95,6 @@ function LifeSupport() {
 
     try {
       setAdjustLoading(true);
-      setError(null);
       await api.lifeSupport.adjustSection(adjustingSection.sectionId, {
         targetTemperature: adjustTemp,
         targetO2: adjustO2,
@@ -100,7 +102,7 @@ function LifeSupport() {
       setAdjustingSection(null);
       await loadData(false);
     } catch (err) {
-      setError(extractErrorInfo(err, 'Failed to adjust environment'));
+      showError(extractErrorInfo(err, 'Failed to adjust environment'));
     } finally {
       setAdjustLoading(false);
     }
@@ -124,13 +126,13 @@ function LifeSupport() {
      );
   }
 
-  if (error && environment.length === 0) {
+  if (loadError && environment.length === 0) {
     return (
       <Card className="border-red-500/50 bg-red-950/20">
         <div className="flex flex-col items-center p-8 text-center">
           <ThermometerSun className="w-12 h-12 text-red-500 mb-4" />
           <h3 className="text-xl text-red-400 font-bold mb-2 uppercase tracking-wide">Life Support Offline</h3>
-          <ErrorAlert error={error} className="mb-6 text-left" onDismiss={() => setError(null)} />
+          <p className="text-red-400/70 text-sm mb-6">Unable to connect to the life support system</p>
           <button
             onClick={() => loadData()}
             className="px-6 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 rounded transition-all font-mono text-sm uppercase tracking-wider flex items-center gap-2"
@@ -173,7 +175,7 @@ function LifeSupport() {
          </div>
       </div>
 
-      {error && <ErrorAlert error={error} onDismiss={() => setError(null)} />}
+
 
       {/* Test Result Display */}
       <AnimatePresence>

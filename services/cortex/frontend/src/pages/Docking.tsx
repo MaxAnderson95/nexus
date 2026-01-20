@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { api, extractErrorInfo } from '../api/client';
 import type { DockingBay, Ship } from '../types';
 import { Card } from '../components/ui/Card';
-import { ErrorAlert, type ErrorInfo } from '../components/ui/ErrorAlert';
+import type { ErrorInfo } from '../components/ui/ErrorAlert';
+import { useErrorToast } from '../context/ErrorToastContext';
 import {
   Anchor,
   Rocket,
@@ -18,8 +19,9 @@ function Docking() {
   const [bays, setBays] = useState<DockingBay[]>([]);
   const [ships, setShips] = useState<Ship[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<ErrorInfo | null>(null);
+  const [loadError, setLoadError] = useState<ErrorInfo | null>(null);
   const [actionLoading, setActionLoading] = useState<Record<number, boolean>>({});
+  const { showError } = useErrorToast();
 
   useEffect(() => {
     loadData();
@@ -37,9 +39,11 @@ function Docking() {
       setBays(baysData);
       setShips(shipsData);
       // Only clear error on successful load if it was a manual refresh
-      if (init) setError(null);
+      if (init) setLoadError(null);
     } catch (err) {
-      setError(extractErrorInfo(err, 'Failed to load docking data'));
+      const errorInfo = extractErrorInfo(err, 'Failed to load docking data');
+      setLoadError(errorInfo);
+      showError(errorInfo);
     } finally {
       if (init) setLoading(false);
     }
@@ -51,7 +55,7 @@ function Docking() {
       await api.docking.dockShip(shipId);
       await loadData(false);
     } catch (err) {
-      setError(extractErrorInfo(err, 'Failed to dock ship'));
+      showError(extractErrorInfo(err, 'Failed to dock ship'));
     } finally {
       setActionLoading(prev => ({ ...prev, [shipId]: false }));
     }
@@ -63,7 +67,7 @@ function Docking() {
       await api.docking.undockShip(shipId);
       await loadData(false);
     } catch (err) {
-      setError(extractErrorInfo(err, 'Failed to undock ship'));
+      showError(extractErrorInfo(err, 'Failed to undock ship'));
     } finally {
       setActionLoading(prev => ({ ...prev, [shipId]: false }));
     }
@@ -78,13 +82,13 @@ function Docking() {
     );
   }
 
-  if (error && bays.length === 0) {
+  if (loadError && bays.length === 0) {
     return (
       <Card className="border-red-500/50 bg-red-950/20">
         <div className="flex flex-col items-center p-8 text-center">
           <Anchor className="w-12 h-12 text-red-500 mb-4" />
           <h3 className="text-xl text-red-400 font-bold mb-2 uppercase tracking-wide">Docking Control Offline</h3>
-          <ErrorAlert error={error} className="mb-6 text-left" onDismiss={() => setError(null)} />
+          <p className="text-red-400/70 text-sm mb-6">Unable to connect to the docking control system</p>
           <button
             onClick={() => loadData()}
             className="px-6 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 rounded transition-all font-mono text-sm uppercase tracking-wider flex items-center gap-2"
@@ -123,7 +127,7 @@ function Docking() {
          </div>
       </div>
 
-      {error && <ErrorAlert error={error} onDismiss={() => setError(null)} />}
+
 
       {/* Docking Bays Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

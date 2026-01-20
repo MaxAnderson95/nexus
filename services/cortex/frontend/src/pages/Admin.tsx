@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { api, extractErrorInfo } from '../api/client';
 import type { ResetAllTablesResponse } from '../types';
 import { Card } from '../components/ui/Card';
-import { ErrorAlert, type ErrorInfo } from '../components/ui/ErrorAlert';
+import { useErrorToast } from '../context/ErrorToastContext';
 import {
   RefreshCw,
   AlertTriangle,
@@ -16,19 +16,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 function Admin() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ResetAllTablesResponse | null>(null);
-  const [error, setError] = useState<ErrorInfo | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const { showError } = useErrorToast();
 
   async function handleResetDemoData() {
     try {
       setLoading(true);
-      setError(null);
       setResult(null);
       setShowConfirmModal(false);
       const response = await api.admin.resetAllTables();
       setResult(response);
     } catch (err) {
-      setError(extractErrorInfo(err, 'Failed to reset demo data'));
+      showError(extractErrorInfo(err, 'Failed to reset demo data'));
     } finally {
       setLoading(false);
     }
@@ -49,7 +48,7 @@ function Admin() {
         </div>
       </div>
 
-      {error && <ErrorAlert error={error} />}
+
 
       {/* Demo Data Reset Card */}
       <Card 

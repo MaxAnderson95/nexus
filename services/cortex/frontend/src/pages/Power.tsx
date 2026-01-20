@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { api, extractErrorInfo } from '../api/client';
 import type { PowerGridStatus, PowerAllocation } from '../types';
 import { Card } from '../components/ui/Card';
-import { ErrorAlert, type ErrorInfo } from '../components/ui/ErrorAlert';
+import type { ErrorInfo } from '../components/ui/ErrorAlert';
+import { useErrorToast } from '../context/ErrorToastContext';
 import {
   Zap,
   Battery,
@@ -21,7 +22,8 @@ function Power() {
   const [grid, setGrid] = useState<PowerGridStatus | null>(null);
   const [allocations, setAllocations] = useState<PowerAllocation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<ErrorInfo | null>(null);
+  const [loadError, setLoadError] = useState<ErrorInfo | null>(null);
+  const { showError } = useErrorToast();
   
   // Allocation modal state
   const [showAllocateModal, setShowAllocateModal] = useState(false);
@@ -49,9 +51,11 @@ function Power() {
       setGrid(gridData);
       setAllocations(allocData);
       // Only clear error on successful load if it was a manual refresh
-      if (init) setError(null);
+      if (init) setLoadError(null);
     } catch (err) {
-      setError(extractErrorInfo(err, 'Failed to load power data'));
+      const errorInfo = extractErrorInfo(err, 'Failed to load power data');
+      setLoadError(errorInfo);
+      showError(errorInfo);
     } finally {
       if (init) setLoading(false);
     }
@@ -59,13 +63,12 @@ function Power() {
 
   async function handleAllocate() {
     if (!allocSystem.trim()) {
-      setError({ message: 'System name is required', traceId: null });
+      showError({ message: 'System name is required', traceId: null });
       return;
     }
 
     try {
       setAllocLoading(true);
-      setError(null);
       await api.power.allocate(allocSystem.trim(), allocAmount, allocPriority);
       setShowAllocateModal(false);
       setAllocSystem('');
@@ -73,7 +76,7 @@ function Power() {
       setAllocPriority(5);
       await loadData(false);
     } catch (err) {
-      setError(extractErrorInfo(err, 'Failed to allocate power'));
+      showError(extractErrorInfo(err, 'Failed to allocate power'));
     } finally {
       setAllocLoading(false);
     }
@@ -82,11 +85,10 @@ function Power() {
   async function handleDeallocate(systemName: string) {
     try {
       setDeallocatingSystems(prev => ({ ...prev, [systemName]: true }));
-      setError(null);
       await api.power.deallocate(systemName);
       await loadData(false);
     } catch (err) {
-      setError(extractErrorInfo(err, 'Failed to deallocate power'));
+      showError(extractErrorInfo(err, 'Failed to deallocate power'));
     } finally {
       setDeallocatingSystems(prev => ({ ...prev, [systemName]: false }));
     }
@@ -110,13 +112,13 @@ function Power() {
      );
   }
 
-  if (error && !grid) {
+  if (loadError && !grid) {
     return (
       <Card className="border-red-500/50 bg-red-950/20">
         <div className="flex flex-col items-center p-8 text-center">
           <AlertTriangle className="w-12 h-12 text-red-500 mb-4" />
           <h3 className="text-xl text-red-400 font-bold mb-2 uppercase tracking-wide">Power Grid Offline</h3>
-          <ErrorAlert error={error} className="mb-6 text-left" onDismiss={() => setError(null)} />
+          <p className="text-red-400/70 text-sm mb-6">Unable to connect to the power grid system</p>
           <button
             onClick={() => loadData()}
             className="px-6 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 rounded transition-all font-mono text-sm uppercase tracking-wider flex items-center gap-2"
@@ -162,7 +164,7 @@ function Power() {
          </div>
       </div>
 
-      {error && <ErrorAlert error={error} onDismiss={() => setError(null)} />}
+
 
       {/* Main Grid Visualization */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

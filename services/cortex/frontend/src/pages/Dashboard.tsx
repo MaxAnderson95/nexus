@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { api, extractErrorInfo } from '../api/client';
 import type { DockingSummary, CrewSummary, LifeSupportSummary, PowerSummary, InventorySummary } from '../types';
 import { Card, StatsCard } from '../components/ui/Card';
-import { ErrorAlert, type ErrorInfo } from '../components/ui/ErrorAlert';
+import type { ErrorInfo } from '../components/ui/ErrorAlert';
+import { useErrorToast } from '../context/ErrorToastContext';
 import {
   Users,
   Anchor,
@@ -30,6 +31,7 @@ function Dashboard() {
   const [power, setPower] = useState<ServiceState<PowerSummary>>({ data: null, loading: true, error: null });
   const [inventory, setInventory] = useState<ServiceState<InventorySummary>>({ data: null, loading: true, error: null });
   const [lastSync, setLastSync] = useState<Date | null>(null);
+  const { showError } = useErrorToast();
 
   // Individual service loaders
   const loadDocking = useCallback(async (init = true) => {
@@ -38,13 +40,15 @@ function Dashboard() {
       const data = await api.dashboard.getDockingSummary();
       setDocking({ data, loading: false, error: null });
     } catch (err) {
+      const errorInfo = extractErrorInfo(err, 'Failed to load docking data');
       setDocking(prev => ({
         data: prev.data,
         loading: false,
-        error: extractErrorInfo(err, 'Failed to load docking data')
+        error: errorInfo
       }));
+      if (init) showError(errorInfo);
     }
-  }, []);
+  }, [showError]);
 
   const loadCrew = useCallback(async (init = true) => {
     try {
@@ -52,13 +56,15 @@ function Dashboard() {
       const data = await api.dashboard.getCrewSummary();
       setCrew({ data, loading: false, error: null });
     } catch (err) {
+      const errorInfo = extractErrorInfo(err, 'Failed to load crew data');
       setCrew(prev => ({
         data: prev.data,
         loading: false,
-        error: extractErrorInfo(err, 'Failed to load crew data')
+        error: errorInfo
       }));
+      if (init) showError(errorInfo);
     }
-  }, []);
+  }, [showError]);
 
   const loadLifeSupport = useCallback(async (init = true) => {
     try {
@@ -66,13 +72,15 @@ function Dashboard() {
       const data = await api.dashboard.getLifeSupportSummary();
       setLifeSupport({ data, loading: false, error: null });
     } catch (err) {
+      const errorInfo = extractErrorInfo(err, 'Failed to load life support data');
       setLifeSupport(prev => ({
         data: prev.data,
         loading: false,
-        error: extractErrorInfo(err, 'Failed to load life support data')
+        error: errorInfo
       }));
+      if (init) showError(errorInfo);
     }
-  }, []);
+  }, [showError]);
 
   const loadPower = useCallback(async (init = true) => {
     try {
@@ -80,13 +88,15 @@ function Dashboard() {
       const data = await api.dashboard.getPowerSummary();
       setPower({ data, loading: false, error: null });
     } catch (err) {
+      const errorInfo = extractErrorInfo(err, 'Failed to load power data');
       setPower(prev => ({
         data: prev.data,
         loading: false,
-        error: extractErrorInfo(err, 'Failed to load power data')
+        error: errorInfo
       }));
+      if (init) showError(errorInfo);
     }
-  }, []);
+  }, [showError]);
 
   const loadInventory = useCallback(async (init = true) => {
     try {
@@ -94,13 +104,15 @@ function Dashboard() {
       const data = await api.dashboard.getInventorySummary();
       setInventory({ data, loading: false, error: null });
     } catch (err) {
+      const errorInfo = extractErrorInfo(err, 'Failed to load inventory data');
       setInventory(prev => ({
         data: prev.data,
         loading: false,
-        error: extractErrorInfo(err, 'Failed to load inventory data')
+        error: errorInfo
       }));
+      if (init) showError(errorInfo);
     }
-  }, []);
+  }, [showError]);
 
   const loadAll = useCallback((init = true) => {
     // Fire all requests in parallel - each will update independently
@@ -166,11 +178,10 @@ function Dashboard() {
   );
 
   // Error card component for service sections
-  const ServiceError = ({ error, onRetry, serviceName }: { error: ErrorInfo; onRetry: () => void; serviceName: string }) => (
+  const ServiceError = ({ onRetry, serviceName }: { error: ErrorInfo; onRetry: () => void; serviceName: string }) => (
     <div className="h-full flex flex-col items-center justify-center p-6 text-center">
       <AlertTriangle className="w-8 h-8 text-red-500/70 mb-3" />
-      <div className="text-sm text-red-400 mb-2">{serviceName} Offline</div>
-      <ErrorAlert error={error} className="mb-4 text-xs" />
+      <div className="text-sm text-red-400 mb-4">{serviceName} Offline</div>
       <button
         onClick={onRetry}
         className="px-3 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 rounded transition-all font-mono text-xs uppercase tracking-wider flex items-center gap-2"
