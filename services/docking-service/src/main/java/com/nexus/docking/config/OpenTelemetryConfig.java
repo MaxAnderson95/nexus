@@ -1,6 +1,6 @@
 package com.nexus.docking.config;
 
-import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,7 +9,8 @@ import org.springframework.context.annotation.Configuration;
 public class OpenTelemetryConfig {
     
     @Bean
-    public Tracer tracer(OpenTelemetry openTelemetry) {
-        return openTelemetry.getTracer("com.nexus.docking");
+    public Tracer tracer() {
+        // Use GlobalOpenTelemetry which is set by the Java agent (injected by Dash0 operator)
+        return GlobalOpenTelemetry.get().getTracer("com.nexus.docking");
     }
 }
