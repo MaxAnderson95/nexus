@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { api, extractErrorInfo } from '../api/client';
 import type { Supply, CargoManifest, ResupplyRequest } from '../types';
 import { Card } from '../components/ui/Card';
-import { ErrorAlert, type ErrorInfo } from '../components/ui/ErrorAlert';
+import type { ErrorInfo } from '../components/ui/ErrorAlert';
+import { useErrorToast } from '../context/ErrorToastContext';
 import {
   Package,
   AlertTriangle,
@@ -20,8 +21,9 @@ function Inventory() {
   const [manifests, setManifests] = useState<CargoManifest[]>([]);
   const [resupplyRequests, setResupplyRequests] = useState<ResupplyRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<ErrorInfo | null>(null);
+  const [loadError, setLoadError] = useState<ErrorInfo | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const { showError } = useErrorToast();
   
   // Consume modal state
   const [consumingSupply, setConsumingSupply] = useState<Supply | null>(null);
@@ -54,9 +56,11 @@ function Inventory() {
       setManifests(manifestsData);
       setResupplyRequests(requestsData);
       // Only clear error on successful load if it was a manual refresh
-      if (init) setError(null);
+      if (init) setLoadError(null);
     } catch (err) {
-      setError(extractErrorInfo(err, 'Failed to load inventory data'));
+      const errorInfo = extractErrorInfo(err, 'Failed to load inventory data');
+      setLoadError(errorInfo);
+      showError(errorInfo);
     } finally {
       if (init) setLoading(false);
     }
@@ -65,11 +69,10 @@ function Inventory() {
   async function handleUnload(manifestId: number) {
     try {
       setUnloadingManifests(prev => ({ ...prev, [manifestId]: true }));
-      setError(null);
       await api.inventory.unloadManifest(manifestId);
       await loadData(false);
     } catch (err) {
-      setError(extractErrorInfo(err, 'Failed to unload manifest'));
+      showError(extractErrorInfo(err, 'Failed to unload manifest'));
     } finally {
       setUnloadingManifests(prev => ({ ...prev, [manifestId]: false }));
     }
@@ -80,12 +83,11 @@ function Inventory() {
 
     try {
       setConsumeLoading(true);
-      setError(null);
       await api.inventory.consume(consumingSupply.id, consumeQuantity);
       setConsumingSupply(null);
       await loadData(false);
     } catch (err) {
-      setError(extractErrorInfo(err, 'Failed to consume supply'));
+      showError(extractErrorInfo(err, 'Failed to consume supply'));
     } finally {
       setConsumeLoading(false);
     }
@@ -96,12 +98,11 @@ function Inventory() {
 
     try {
       setResupplyLoading(true);
-      setError(null);
       await api.inventory.requestResupply(resupplyingSupply.id, resupplyQuantity);
       setResupplyingSupply(null);
       await loadData(false);
     } catch (err) {
-      setError(extractErrorInfo(err, 'Failed to request resupply'));
+      showError(extractErrorInfo(err, 'Failed to request resupply'));
     } finally {
       setResupplyLoading(false);
     }
@@ -147,13 +148,13 @@ function Inventory() {
      );
   }
 
-  if (error && supplies.length === 0) {
+  if (loadError && supplies.length === 0) {
     return (
       <Card className="border-red-500/50 bg-red-950/20">
         <div className="flex flex-col items-center p-8 text-center">
           <Package className="w-12 h-12 text-red-500 mb-4" />
           <h3 className="text-xl text-red-400 font-bold mb-2 uppercase tracking-wide">Inventory System Offline</h3>
-          <ErrorAlert error={error} className="mb-6 text-left" onDismiss={() => setError(null)} />
+          <p className="text-red-400/70 text-sm mb-6">Unable to connect to the inventory system</p>
           <button
             onClick={() => loadData()}
             className="px-6 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 rounded transition-all font-mono text-sm uppercase tracking-wider flex items-center gap-2"
@@ -196,7 +197,7 @@ function Inventory() {
          </div>
       </div>
 
-      {error && <ErrorAlert error={error} onDismiss={() => setError(null)} />}
+
 
       {/* Category Filter Bar */}
       <div className="flex overflow-x-auto pb-2 gap-2 scrollbar-thin scrollbar-thumb-space-700 scrollbar-track-transparent">

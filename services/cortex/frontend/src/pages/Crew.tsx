@@ -3,6 +3,7 @@ import { api, extractErrorInfo } from '../api/client';
 import type { CrewMember, Section } from '../types';
 import { Card } from '../components/ui/Card';
 import { ErrorAlert, type ErrorInfo } from '../components/ui/ErrorAlert';
+import { useErrorToast } from '../context/ErrorToastContext';
 import {
   Users,
   Search,
@@ -20,9 +21,10 @@ function Crew() {
   const [crew, setCrew] = useState<CrewMember[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<ErrorInfo | null>(null);
+  const [loadError, setLoadError] = useState<ErrorInfo | null>(null);
   const [selectedSection, setSelectedSection] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const { showError } = useErrorToast();
 
   // Relocate modal state
   const [relocatingMember, setRelocatingMember] = useState<CrewMember | null>(null);
@@ -46,9 +48,11 @@ function Crew() {
       setCrew(crewData);
       setSections(sectionsData);
       // Only clear error on successful load if it was a manual refresh
-      if (init) setError(null);
+      if (init) setLoadError(null);
     } catch (err) {
-      setError(extractErrorInfo(err, 'Failed to load crew data'));
+      const errorInfo = extractErrorInfo(err, 'Failed to load crew data');
+      setLoadError(errorInfo);
+      showError(errorInfo);
     } finally {
       if (init) setLoading(false);
     }
@@ -65,7 +69,9 @@ function Crew() {
       setRelocateTargetSection(null);
       await loadData(false);
     } catch (err) {
-      setRelocateError(extractErrorInfo(err, 'Failed to relocate crew member'));
+      const errorInfo = extractErrorInfo(err, 'Failed to relocate crew member');
+      setRelocateError(errorInfo);
+      showError(errorInfo);
     } finally {
       setRelocateLoading(false);
     }
@@ -107,13 +113,13 @@ function Crew() {
      );
   }
 
-  if (error && crew.length === 0) {
+  if (loadError && crew.length === 0) {
     return (
       <Card className="border-red-500/50 bg-red-950/20">
         <div className="flex flex-col items-center p-8 text-center">
           <Users className="w-12 h-12 text-red-500 mb-4" />
           <h3 className="text-xl text-red-400 font-bold mb-2 uppercase tracking-wide">Personnel System Offline</h3>
-          <ErrorAlert error={error} className="mb-6 text-left" onDismiss={() => setError(null)} />
+          <p className="text-red-400/70 text-sm mb-6">Unable to connect to the crew management system</p>
           <button
             onClick={() => loadData()}
             className="px-6 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 rounded transition-all font-mono text-sm uppercase tracking-wider flex items-center gap-2"
@@ -160,7 +166,7 @@ function Crew() {
          </div>
       </div>
 
-      {error && <ErrorAlert error={error} onDismiss={() => setError(null)} />}
+
 
       {/* Section Filter Bar */}
       <div className="flex overflow-x-auto pb-2 gap-2 scrollbar-thin scrollbar-thumb-space-700 scrollbar-track-transparent">
