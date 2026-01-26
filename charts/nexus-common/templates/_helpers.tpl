@@ -93,7 +93,7 @@ Usage: {{ include "nexus-common.serviceUrl" (dict "service" "power" "namespace" 
 {{/*
 Generate PostgreSQL JDBC connection URL for cross-namespace access.
 If namespace is empty, uses short service name (same namespace).
-Usage: {{ include "nexus-common.postgresJdbcUrl" (dict "service" "postgres" "namespace" "nexus-infra" "port" 5432 "database" "nexus") }}
+Usage: {{ include "nexus-common.postgresJdbcUrl" (dict "service" "postgres" "namespace" "nexus-infra" "port" 5432 "database" "nexus_db") }}
 */}}
 {{- define "nexus-common.postgresJdbcUrl" -}}
 {{- if .namespace -}}

@@ -20,7 +20,7 @@ postgres:
     tag: "15-alpine"
     pullPolicy: IfNotPresent
   auth:
-    database: nexus
+    database: nexus_db
     username: nexus
     password: nexus_password
   config:

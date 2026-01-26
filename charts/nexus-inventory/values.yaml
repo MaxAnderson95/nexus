@@ -24,7 +24,7 @@ global:
 
 # Database configuration
 database:
-  name: nexus
+  name: nexus_db
   username: nexus
   password: nexus_password
   schema: inventory

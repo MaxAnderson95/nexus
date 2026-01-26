@@ -6,7 +6,7 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-nexus}
+      POSTGRES_DB: ${POSTGRES_DB:-nexus_db}
       POSTGRES_USER: ${POSTGRES_USER:-nexus}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexus}
     volumes:
@@ -17,7 +17,7 @@ services:
     networks:
       - nexus
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nexus} -d ${POSTGRES_DB:-nexus}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nexus} -d ${POSTGRES_DB:-nexus_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -94,7 +94,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: power-service
       CHAOS: ${POWER_CHAOS:-${CHAOS_DEFAULT:-none}}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus_db}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-nexus}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-nexus}
       SPRING_DATA_REDIS_HOST: redis
@@ -123,7 +123,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: life-support-service
       CHAOS: ${LIFE_SUPPORT_CHAOS:-${CHAOS_DEFAULT:-none}}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus_db}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-nexus}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-nexus}
       SPRING_DATA_REDIS_HOST: redis
@@ -153,7 +153,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: crew-service
       CHAOS: ${CREW_CHAOS:-${CHAOS_DEFAULT:-none}}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus_db}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-nexus}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-nexus}
       SPRING_DATA_REDIS_HOST: redis
@@ -183,7 +183,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: docking-service
       CHAOS: ${DOCKING_CHAOS:-${CHAOS_DEFAULT:-none}}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus_db}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-nexus}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-nexus}
       SPRING_DATA_REDIS_HOST: redis
@@ -215,7 +215,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: inventory-service
       CHAOS: ${INVENTORY_CHAOS:-${CHAOS_DEFAULT:-none}}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-nexus_db}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-nexus}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-nexus}
       SPRING_DATA_REDIS_HOST: redis
