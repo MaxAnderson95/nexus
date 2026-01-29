@@ -1,5 +1,8 @@
 package com.nexus.docking.config;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Scope;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -23,9 +26,15 @@ public class ChaosConfig implements WebMvcConfigurer {
     @Value("${nexus.chaos.level:none}")
     private String chaosLevel;
     
+    private final Tracer tracer;
+    
+    public ChaosConfig(Tracer tracer) {
+        this.tracer = tracer;
+    }
+    
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new ChaosInterceptor(chaosLevel))
+        registry.addInterceptor(new ChaosInterceptor(chaosLevel, tracer))
                 .addPathPatterns("/api/v1/**")
                 .excludePathPatterns("/actuator/**", "/api/v1/admin/**", "/admin/**");
     }
@@ -33,6 +42,7 @@ public class ChaosConfig implements WebMvcConfigurer {
     public static class ChaosInterceptor implements HandlerInterceptor {
         
         private final String chaosLevel;
+        private final Tracer tracer;
         private final Random random = new Random();
         
         private record ChaosSettings(double errorRate, int minDelayMs, int maxDelayMs) {}
@@ -54,8 +64,9 @@ public class ChaosConfig implements WebMvcConfigurer {
                 "Bay door actuator failure"
         };
         
-        public ChaosInterceptor(String chaosLevel) {
+        public ChaosInterceptor(String chaosLevel, Tracer tracer) {
             this.chaosLevel = chaosLevel != null ? chaosLevel.toLowerCase() : "none";
+            this.tracer = tracer;
             if (!CHAOS_CONFIGS.containsKey(this.chaosLevel) && !"none".equals(this.chaosLevel)) {
                 log.warn("Invalid chaos level '{}', defaulting to 'medium'", chaosLevel);
             }
@@ -72,7 +83,15 @@ public class ChaosConfig implements WebMvcConfigurer {
                 int delay = config.minDelayMs() + random.nextInt(config.maxDelayMs() - config.minDelayMs() + 1);
                 if (delay > 0) {
                     log.warn("Chaos Engineering: Adding {}ms latency", delay);
-                    Thread.sleep(delay);
+                    Span span = tracer.spanBuilder("chaos.latency")
+                            .setAttribute("chaos.level", level)
+                            .setAttribute("chaos.delay_ms", delay)
+                            .startSpan();
+                    try (Scope scope = span.makeCurrent()) {
+                        Thread.sleep(delay);
+                    } finally {
+                        span.end();
+                    }
                 }
             }
             
