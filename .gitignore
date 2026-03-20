@@ -22,7 +22,9 @@ release.properties
 .project
 .classpath
 .settings/
-.vscode/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
 *.swp
 *.swo
 *~
@@ -76,5 +78,9 @@ logs/
 # Temp files
 tmp/
 temp/
+
+# Docs (root only, keep docs in subdirectories)
+/*.md
+/*.pdf
 
 .opencode/

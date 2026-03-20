@@ -1,0 +1,56 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "CortexApplication",
+            "request": "launch",
+            "mainClass": "com.nexus.cortex.CortexApplication",
+            "projectName": "cortex"
+        },
+        {
+            "type": "java",
+            "name": "CrewServiceApplication",
+            "request": "launch",
+            "mainClass": "com.nexus.crew.CrewServiceApplication",
+            "projectName": "crew-service"
+        },
+        {
+            "type": "java",
+            "name": "DockingServiceApplication",
+            "request": "launch",
+            "mainClass": "com.nexus.docking.DockingServiceApplication",
+            "projectName": "docking-service"
+        },
+        {
+            "type": "java",
+            "name": "InventoryServiceApplication",
+            "request": "launch",
+            "mainClass": "com.nexus.inventory.InventoryServiceApplication",
+            "projectName": "inventory-service"
+        },
+        {
+            "type": "java",
+            "name": "LifeSupportServiceApplication",
+            "request": "launch",
+            "mainClass": "com.nexus.lifesupport.LifeSupportServiceApplication",
+            "projectName": "life-support-service"
+        },
+        {
+            "type": "java",
+            "name": "PowerServiceApplication",
+            "request": "launch",
+            "mainClass": "com.nexus.power.PowerServiceApplication",
+            "projectName": "power-service"
+        }
+    ]
+}

@@ -1,0 +1,14 @@
+{
+  "target": {
+    "path": "deploy/crew",
+    "namespace": "nexus-crew"
+  },
+  "feature": {
+    "network": {
+      "incoming": "steal",
+      "dns": true
+    },
+    "fs": "read",
+    "env": true
+  }
+}
